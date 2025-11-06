@@ -79,23 +79,31 @@ body{
 .site-footer{padding:30px 0;text-align:center;color:var(--muted)}
 
 /* WhatsApp float button */
-.wa-float{
-  position:fixed;
-  right:18px;
-  bottom:18px;
-  width:60px;
-  height:60px;
-  background:var(--gold);
-  color:var(--white);
-  border-radius:50%;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  box-shadow:0 6px 20px rgba(0,0,0,0.4);
-  z-index:999;
-  text-decoration:none;
+.wa-float {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  text-decoration: none;
+  box-shadow: none;
+  background: transparent; /* remove o fundo dourado */
 }
-.wa-float:hover{transform:translateY(-3px);box-shadow:0 10px 30px rgba(0,0,0,0.5);}
+
+.wa-float img {
+  width: 55px;
+  height: 55px;
+}
+
+.wa-float:hover {
+  transform: translateY(-3px);
+}
+
 
 /* Responsive */
 @media (max-width:880px){
