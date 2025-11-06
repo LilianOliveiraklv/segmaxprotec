@@ -1,117 +1,148 @@
-
-/* Variables */
 :root{
   --gold: #f7d007;
-  --black: #000000;
-  --white: #ffffff;
-  --muted: #bfc7cf;
-  --container: 1100px;
-}
-
-*{box-sizing:border-box}
-
-body{
-  margin:0;
+  --dark: #0f1720;
+  --gray-1: #f6f7f9;
+  --muted: #55606a;
+  --max-width: 1100px;
   font-family: Inter, system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
-  background: var(--black);
-  color: var(--white);
-  -webkit-font-smoothing:antialiased;
 }
 
-.container{
-  max-width: var(--container);
-  margin: 0 auto;
-  padding: 0 18px;
+/* estrutura geral */
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--gray-1);color:var(--dark);line-height:1.5}
+
+/* topo */
+header{
+  background:linear-gradient(90deg,#071126 0%, #0b1a2a 100%);
+  color:white;
+  padding:22px 16px;
+  text-align:center;
+}
+.brand{font-weight:800;font-size:1.6rem;color:var(--gold)}
+.slogan{margin-top:6px;color:#cbd5e1}
+
+/* menu */
+nav{
+  display:flex;
+  justify-content:center;
+  gap:18px;
+  padding:14px 8px;
+  background:white;
+}
+nav a{color:var(--dark);text-decoration:none;font-weight:600}
+
+/* conteúdo principal */
+.container{max-width:var(--max-width);margin:0 auto;padding:28px}
+
+/* hero */
+.hero{
+  background:linear-gradient(180deg, rgba(7,17,36,0.9), rgba(12,23,36,0.95)), 
+              url('../imagens/fundo.jpg') center/cover no-repeat;
+  color:white;
+  border-radius:12px;
+  padding:48px;
+  text-align:center;
+}
+.hero h1{font-size:2rem;margin-bottom:12px;color:var(--gold)}
+.hero p{margin-bottom:18px;color:#d2dae3}
+.hero .ctas{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+
+/* botões */
+.btn{
+  background:var(--gold);
+  color:var(--dark);
+  padding:12px 18px;
+  border-radius:8px;
+  text-decoration:none;
+  font-weight:700;
+}
+.btn-outline{
+  background:transparent;
+  border:2px solid rgba(255,255,255,0.14);
+  color:rgba(255,255,255,0.92);
 }
 
-/* Header */
-.site-header{
-  background: rgba(0,0,0,0.85);
-  border-bottom: 1px solid rgba(255,255,255,0.03);
-  position: sticky;
-  top:0;
-  z-index:90;
+/* seções */
+.section{padding:46px 10px}
+h2{margin-bottom:14px;font-size:1.4rem}
+.cards{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
+  gap:18px;
 }
-.header-inner{
+.card{
+  background:white;
+  padding:18px;
+  border-radius:12px;
+  box-shadow:0 6px 18px rgba(11,20,30,0.06);
+  border:1px solid rgba(11,20,30,0.04);
+}
+.card h3{margin-bottom:8px}
+.muted{color:var(--muted);font-size:0.95rem}
+
+/* contato */
+.contact-grid{
+  display:grid;
+  grid-template-columns:1fr 360px;
+  gap:20px;
+}
+.contact-card{
+  background:white;
+  padding:18px;
+  border-radius:12px;
+  box-shadow:0 6px 18px rgba(11,20,30,0.06);
+}
+form input, form textarea{
+  width:100%;
+  padding:12px;
+  margin-bottom:10px;
+  border:1px solid #dbe3ee;
+  border-radius:8px;
+}
+form button{
+  background:var(--dark);
+  color:white;
+  padding:12px;
+  border-radius:8px;
+  border:0;
+  cursor:pointer;
+}
+
+/* botão flutuante WhatsApp */
+.wa-float{
+  position:fixed;
+  right:20px;
+  bottom:20px;
+  width:60px;
+  height:60px;
+  border-radius:50%;
+  background:transparent;
   display:flex;
   align-items:center;
-  justify-content:space-between;
-  padding:14px 0;
-}
-.logo{height:56px;}
-
-/* Nav */
-.main-nav a{
-  color:var(--white);
+  justify-content:center;
+  box-shadow:0 6px 20px rgba(0,0,0,0.4);
+  z-index:100;
   text-decoration:none;
-  margin-left:18px;
-  font-weight:600;
 }
-.main-nav a:hover{color:var(--gold);}
-
-/* Hero */
-.hero{
-  padding:72px 0;
-  text-align:left;
-  background: linear-gradient(180deg, rgba(0,0,0,0.6), rgba(0,0,0,0.6));
+.wa-float img{
+  width:40px;
+  height:40px;
 }
-.hero h1{font-size:2rem;margin:0 0 8px;color:var(--white)}
-.lead{color:var(--muted);margin-bottom:18px}
-
-/* Buttons */
-.btn{background:transparent;border:2px solid rgba(255,255,255,0.08);color:var(--white);padding:10px 16px;border-radius:8px;cursor:pointer}
-.btn.primary{background:var(--gold);color:var(--black);border:0}
-.btn.primary:hover{filter:brightness(1.05)}
-
-/* Sections */
-.section{padding:48px 0}
-.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:20px}
-.card{background:rgba(255,255,255,0.03);padding:18px;border-radius:10px;border:1px solid rgba(255,255,255,0.02)}
-
-/* Contact grid */
-.contact-grid{display:grid;grid-template-columns:1fr 420px;gap:20px}
-.contact-form .muted{color:var(--muted);font-size:0.9rem;margin-top:8px}
-
-/* Dark section */
-.section.dark{background:rgba(255,255,255,0.02);}
-
-/* Footer */
-.site-footer{padding:30px 0;text-align:center;color:var(--muted)}
-
-/* WhatsApp float button */
-.wa-float {
-  position: fixed;
-  right: 20px;
-  bottom: 20px;
-  width: 60px;
-  height: 60px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 100;
-  text-decoration: none;
-  box-shadow: none;
-  background: transparent; /* remove o fundo dourado */
+.wa-float:hover{
+  transform:translateY(-3px);
+  box-shadow:0 10px 30px rgba(0,0,0,0.5);
 }
 
-.wa-float img {
-  width: 55px;
-  height: 55px;
+/* rodapé */
+footer{
+  padding:22px;
+  text-align:center;
+  color:#98a0aa;
 }
 
-.wa-float:hover {
-  transform: translateY(-3px);
-}
-
-
-/* Responsive */
+/* responsivo */
 @media (max-width:880px){
-  .header-inner{flex-direction:row}
-  .main-nav{display:none}
   .contact-grid{grid-template-columns:1fr}
-  .logo{height:48px}
-  .hero{padding:42px 0;text-align:center}
-  .hero h1{font-size:1.4rem}
-  .wa-float{right:12px;bottom:12px;width:52px;height:52px}
+  nav{flex-wrap:wrap}
+  .hero h1{font-size:1.6rem}
 }
