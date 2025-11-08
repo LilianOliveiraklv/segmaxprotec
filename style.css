@@ -5,11 +5,13 @@
   --light: #f5f5f5;
 }
 
+/* ---------- BASE ---------- */
 body {
   margin: 0;
   font-family: 'Segoe UI', Roboto, sans-serif;
   color: var(--dark);
   background-color: var(--light);
+  line-height: 1.6;
 }
 
 .container {
@@ -18,33 +20,44 @@ body {
   margin: 0 auto;
 }
 
+/* ---------- HEADER ---------- */
 header {
   background: var(--dark);
   color: #fff;
   padding: 1rem 0;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
 }
 
 .header-inner {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-wrap: wrap;
 }
 
 .logo {
   height: 60px;
 }
 
+.main-nav {
+  display: flex;
+  gap: 1rem;
+}
+
 .main-nav a {
   color: var(--yellow);
   text-decoration: none;
-  margin-left: 20px;
   font-weight: bold;
+  transition: color 0.3s;
 }
 
 .main-nav a:hover {
-  text-decoration: underline;
+  color: #fff;
 }
 
+/* ---------- HERO ---------- */
 .hero {
   background: var(--gray);
   color: #fff;
@@ -52,19 +65,40 @@ header {
   padding: 80px 20px;
 }
 
+.hero h1 {
+  font-size: 2.2rem;
+  margin-bottom: 10px;
+}
+
+.hero .lead {
+  font-size: 1.1rem;
+  margin-bottom: 25px;
+}
+
 .hero .btn.primary {
   display: inline-block;
-  margin-top: 20px;
   background: var(--yellow);
   color: var(--dark);
   padding: 12px 25px;
   border-radius: 6px;
   text-decoration: none;
   font-weight: bold;
+  transition: background 0.3s;
 }
 
+.hero .btn.primary:hover {
+  background: #e6bc00;
+}
+
+/* ---------- SEÇÕES ---------- */
 .section {
   padding: 60px 0;
+}
+
+.section h2 {
+  text-align: center;
+  font-size: 1.8rem;
+  margin-bottom: 40px;
 }
 
 .section.dark {
@@ -72,35 +106,54 @@ header {
   color: #fff;
 }
 
+/* ---------- CARDS ---------- */
 .cards {
   display: grid;
   gap: 20px;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
 }
 
 .card {
   background: #fff;
   border-radius: 8px;
-  padding: 20px;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  padding: 25px;
+  box-shadow: 0 3px 6px rgba(0,0,0,0.1);
+  text-align: center;
 }
 
 .section.dark .card {
   background: #333;
 }
 
+/* ---------- CONTATO ---------- */
 .contact-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 20px;
+  gap: 25px;
+}
+
+.contact-info a {
+  color: var(--dark);
+  text-decoration: none;
+  font-weight: bold;
+}
+
+.contact-info a:hover {
+  color: var(--gray);
 }
 
 input, textarea {
   width: 100%;
-  padding: 10px;
+  padding: 12px;
   margin: 10px 0;
   border-radius: 6px;
   border: 1px solid #ccc;
+  font-size: 1rem;
+}
+
+textarea {
+  resize: vertical;
+  min-height: 100px;
 }
 
 .btn.secondary {
@@ -108,13 +161,69 @@ input, textarea {
   color: #fff;
   border: none;
   padding: 10px 20px;
+  border-radius: 6px;
   cursor: pointer;
+  font-weight: bold;
+  transition: background 0.3s;
 }
 
+.btn.secondary:hover {
+  background: var(--gray);
+}
+
+/* ---------- RODAPÉ ---------- */
 .site-footer {
   background: var(--dark);
   color: #ccc;
   text-align: center;
   padding: 15px;
   font-size: 0.9rem;
+}
+
+/* ---------- RESPONSIVIDADE ---------- */
+@media (max-width: 768px) {
+  .hero {
+    padding: 60px 15px;
+  }
+
+  .hero h1 {
+    font-size: 1.8rem;
+  }
+
+  .main-nav {
+    width: 100%;
+    justify-content: center;
+    margin-top: 10px;
+    flex-wrap: wrap;
+  }
+
+  .main-nav a {
+    font-size: 0.95rem;
+  }
+
+  .card {
+    padding: 20px;
+  }
+}
+
+@media (max-width: 480px) {
+  .logo {
+    height: 50px;
+  }
+
+  .hero h1 {
+    font-size: 1.6rem;
+  }
+
+  .hero .lead {
+    font-size: 1rem;
+  }
+
+  .btn.primary {
+    padding: 10px 20px;
+  }
+
+  .contact-grid {
+    grid-template-columns: 1fr;
+  }
 }
