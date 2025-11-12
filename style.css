@@ -121,6 +121,17 @@ body{ background:var(--gray-1); color:var(--dark); -webkit-font-smoothing:antial
 }
 .botao-especialista:hover{ background:#000; color:var(--yellow); transform:translateX(-50%) scale(1.03); }
 
+.area-direita {
+  display: flex;
+  flex-direction: column; /* imagem em cima, botão embaixo */
+  align-items: flex-end; /* tudo colado à direita */
+  justify-content: center;
+  gap: 15px;
+  margin-right: 20px; /* 🔹 distância mínima da borda */
+  text-align: right;
+}
+
+
 /* ============================== SERVIÇOS ============================== */
 .servicos{
   display:flex;
