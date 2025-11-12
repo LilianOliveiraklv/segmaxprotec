@@ -61,6 +61,17 @@ body{ background:var(--gray-1); color:var(--dark); -webkit-font-smoothing:antial
 .hamburger{ display:none; background:transparent; border:0; cursor:pointer; padding:8px; }
 .hamburger span{ display:block; width:26px; height:3px; background:#000; margin:5px 0; border-radius:3px; transition:all .25s; }
 
+.lado-direito {
+  display: flex;
+  flex-direction: column;       /* imagem em cima, botão embaixo */
+  align-items: flex-end;        /* tudo alinhado à direita */
+  justify-content: center;      
+  gap: 15px;                    /* espaço entre imagem e botão */
+  margin-right: 10px;           /* 🔹 distância da borda — pode reduzir */
+  text-align: right;
+}
+
+
 /* ============================== BANNER ============================== */
 .banner-segmax{
   display:flex;
