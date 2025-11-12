@@ -49,7 +49,7 @@ body{ background:var(--gray-1); color:var(--dark); -webkit-font-smoothing:antial
   display: flex;
   justify-content: center;
   gap: 20px;
-  margin-top: 5px; /* 🔹 diminui a distância */
+  margin-top: 10px; /* 🔹 diminui a distância */
 }
 
 .menu a{ text-decoration:none; color:#000; font-weight:700; transition:color .2s, transform .15s; }
