@@ -5,10 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>SEGMAX PROTEC</title>
   <meta name="description" content="Instalação e manutenção de câmeras e portões automatizados - SEGMAX PROTEC" />
-  <!-- Font Awesome -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" integrity="" crossorigin="anonymous">
-  <!-- Estilos -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
   <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
 </head>
 
 <body>
@@ -16,13 +16,13 @@
   <!-- ============================== 🌸 CABEÇALHO ============================== -->
   <header class="topo">
     <div class="lado-esquerdo">
-      <a href="https://wa.me/5531999097336" target="_blank" rel="noopener" class="icone">
-        <i class="fa-brands fa-whatsapp" aria-hidden="true"></i>
+      <a href="https://wa.me/5531999097336" target="_blank" class="icone">
+        <i class="fa-brands fa-whatsapp"></i>
         <span>(31) 9 9909-7336</span>
       </a>
 
-      <a href="https://www.instagram.com/segmaxprotec/" target="_blank" rel="noopener" class="icone">
-        <i class="fa-brands fa-instagram" aria-hidden="true"></i>
+      <a href="https://www.instagram.com/segmaxprotec/" target="_blank" class="icone">
+        <i class="fa-brands fa-instagram"></i>
         <span>@segmaxprotec</span>
       </a>
     </div>
@@ -34,17 +34,12 @@
 
   <!-- ============================== 🖼️ LOGO + MENU ============================== -->
   <section class="logo-menu">
-    <div class="lado-esquerdo logo-area">
+    <div class="lado-esquerdo">
       <!-- 🔹 Logo SEGMAX -->
       <img src="img/logo.png" alt="SEGMAX PROTEC" class="logo-menor animar-esquerda">
     </div>
 
-    <!-- MENU / HAMBURGER -->
-    <button class="hamburger" id="hamburger" aria-label="Abrir menu">
-      <span></span><span></span><span></span>
-    </button>
-
-    <nav class="menu animar-direita" id="menuPrincipal" aria-label="Navegação principal">
+    <nav class="menu animar-direita">
       <a href="#inicio">Início</a>
       <a href="#produtos">Produtos</a>
       <a href="#servicos">Serviços</a>
@@ -53,7 +48,7 @@
   </section>
 
   <!-- ============================== 🎯 BANNER PRINCIPAL ============================== -->
-  <section class="banner-segmax" id="inicio">
+  <section class="banner-segmax">
     <div class="lado-esquerdo animar-esquerda">
       <div class="texto-principal">
         <h2><span class="amarelo">Segurança</span> inteligente para seu patrimônio</h2>
@@ -73,182 +68,192 @@
 
     <div class="lado-direito animar-direita">
       <!-- 🔹Imagem da câmera -->
-      <img src="img/camera.png" alt="Câmera de segurança" class="camera" role="img">
-      <a href="https://wa.me/5531999097336" target="_blank" rel="noopener" class="botao-whats">
-        <i class="fa-brands fa-whatsapp" aria-hidden="true"></i> Saiba mais
+      <img src="img/camera.png" alt="Câmera de segurança" class="camera">
+      <a href="https://wa.me/5531999097336" target="_blank" class="botao-whats">
+        <i class="fa-brands fa-whatsapp"></i> Saiba mais
       </a>
     </div>
   </section>
 
-  <!-- 🔹 FAIXA DE IMAGENS COM BOTÃO NO MEIO -->
-  <section class="faixa-imagens" aria-label="Galeria de imagens">
-    <img src="img/faixa1.jpg" alt="Imagem 1 - SEGMAX PROTEC" loading="lazy">
+<!-- 🔹 FAIXA DE IMAGENS COM BOTÃO NO MEIO -->
+<section class="faixa-imagens">
+  <img src="img/faixa1.jpg" alt="Imagem 1 - SEGMAX PROTEC">
 
-    <!-- 🔹 Imagem do meio com botão -->
-    <div class="imagem-com-botao">
-      <img src="img/faixa2.jpg" alt="Imagem 2 - SEGMAX PROTEC" loading="lazy">
-      <a href="https://wa.me/5531999097336" target="_blank" rel="noopener" class="botao-especialista">
-        <i class="fa-brands fa-whatsapp" aria-hidden="true"></i> Fale com um especialista
-      </a>
-    </div>
-
-    <img src="img/faixa3.jpg" alt="Imagem 3 - SEGMAX PROTEC" loading="lazy">
-  </section>
-
-  <!-- 🔹 SEÇÃO DE SERVIÇOS / 4 IMAGENS COM FUNDO PRETO -->
-  <section class="servicos" id="servicos" aria-label="Serviços">
-    <div class="servico">
-      <img src="img/servico1.jpg" alt="Instalação de Câmeras" loading="lazy">
-    </div>
-    <div class="servico">
-      <img src="img/servico2.jpg" alt="Manutenção de Portões" loading="lazy">
-    </div>
-    <div class="servico">
-      <img src="img/servico3.jpg" alt="Controle de Acesso" loading="lazy">
-    </div>
-    <div class="servico">
-      <img src="img/servico4.jpg" alt="Alarmes e Segurança" loading="lazy">
-    </div>
-  </section>
-
-  <!-- 🔹 SEGUNDA SEÇÃO DE SERVIÇOS (COM ANIMAÇÃO) -->
-  <section class="servicos animados">
-    <!-- se tiver vídeo, usar tag <video>; se não, usar imagem -->
-    <div class="servico animar">
-      <!-- exemplo com imagem; se quiser mesmo exibir um mp4, troque para <video ...> -->
-      <img src="img/servico5.jpg" alt="Serviço 5" loading="lazy">
-    </div>
-    <div class="servico animar">
-      <img src="img/servico6.jpg" alt="Serviço 6" loading="lazy">
-    </div>
-    <div class="servico animar">
-      <img src="img/servico7.jpg" alt="Serviço 7" loading="lazy">
-    </div>
-    <div class="servico animar">
-      <img src="img/servico8.jpg" alt="Serviço 8" loading="lazy">
-    </div>
-  </section>
-
-  <!-- 🔹 SEÇÃO NOSSAS INSTALAÇÕES -->
-  <section class="instalacoes" id="instalacoes" aria-label="Nossas instalações">
-    <div class="instalacoes-esquerda">
-      <h2>Nossas Instalações</h2>
-      <p class="descricao">
-        Veja algumas de nossas instalações em clientes dos mais diversos segmentos.
-      </p>
-
-      <div class="instalacoes-lista">
-        <div class="instalacao-item">
-          <img src="img/figura1.jpg" alt="Portão Automático" loading="lazy">
-          <h3>Portão Automático</h3>
-          <p>Sistema de instalação e manutenção de portões automatizados.</p>
-        </div>
-
-        <div class="instalacao-item">
-          <img src="img/figura2.jpg" alt="Portão Automático" loading="lazy">
-          <h3>Portão Automático</h3>
-          <p>Sistema de instalação e manutenção de portões automatizados.</p>
-        </div>
-
-        <div class="instalacao-item">
-          <img src="img/figura3.jpg" alt="Portão Automático" loading="lazy">
-          <h3>Portão Automático</h3>
-          <p>Sistema de instalação e manutenção de portões automatizados.</p>
-        </div>
-      </div>
-    </div>
-
-    <div class="instalacoes-direita">
-      <img src="img/app.jpg" alt="Aplicativo SEGMAX PROTEC" loading="lazy">
-    </div>
-  </section>
-
-  <!-- 💬 SEÇÃO DEPOIMENTOS -->
-  <section class="depoimentos" id="depoimentos" aria-label="Depoimentos">
-    <h2>O que nossos clientes dizem</h2>
-    <p class="subtitulo">Depoimentos reais de quem confia na SEGMAX PROTEC</p>
-
-    <div class="depoimentos-container">
-      <div class="depoimento-card">
-        <img src="img/cliente1.jpg" alt="Cliente satisfeito" loading="lazy">
-        <h3>Lucas Andrade</h3>
-        <p>"Profissionais excelentes! Instalaram as câmeras aqui no meu comércio e ficou tudo impecável. Atendimento rápido e preço justo!"</p>
-      </div>
-
-      <div class="depoimento-card">
-        <img src="img/cliente2.jpg" alt="Cliente feliz" loading="lazy">
-        <h3>Mariana Costa</h3>
-        <p>"Tive um problema com o portão à noite, entrei em contato e fui atendida na hora! Super recomendo a SEGMAX PROTEC."</p>
-      </div>
-
-      <div class="depoimento-card">
-        <img src="img/cliente3.jpg" alt="Cliente" loading="lazy">
-        <h3>João Ferreira</h3>
-        <p>"O sistema de câmeras ficou incrível. As imagens são nítidas e a equipe é muito atenciosa. Indico de olhos fechados!"</p>
-      </div>
-    </div>
-  </section>
-
-  <!-- 💛 SEÇÃO FALE COM UM ESPECIALISTA -->
-  <section class="cta-whatsapp" id="contato" aria-label="Fale com um especialista">
-    <div class="cta-content">
-      <h2>Fale agora mesmo com um especialista!</h2>
-      <a href="https://wa.me/5531999097336" target="_blank" rel="noopener" class="cta-button">
-        Falar com um especialista
-      </a>
-    </div>
-  </section>
-
-  <div class="espaco" aria-hidden="true"></div>
-
-  <!-- ⚫️ RODAPÉ -->
-  <footer class="rodape" role="contentinfo">
-    <div class="rodape-container">
-      <div class="rodape-esquerda">
-        <img src="img/logo.png" alt="Logo SEGMAX PROTEC" class="rodape-logo" loading="lazy">
-        <h3>SEGMAX PROTEC</h3>
-        <p>Sistemas de Segurança</p>
-        <p>CNPJ: 24.245.786/0001-75</p>
-      </div>
-
-      <div class="rodape-centro">
-        <h3>Mapa do Site</h3>
-        <ul>
-          <li><a href="#inicio">Início</a></li>
-          <li><a href="#blog">Blog</a></li>
-          <li><a href="#contato">Contato</a></li>
-          <li><a href="#politica">Política de Privacidade</a></li>
-          <li><a href="#produtos">Produtos</a></li>
-          <li><a href="#servicos">Serviços</a></li>
-        </ul>
-      </div>
-
-      <div class="rodape-direita">
-        <h3>Contato</h3>
-        <p><i class="fa-brands fa-whatsapp" aria-hidden="true"></i> (31) 9 9909-7336</p>
-        <p><i class="fa-brands fa-instagram" aria-hidden="true"></i> @segmaxprotec</p>
-      </div>
-    </div>
-
-    <div class="rodape-bottom">
-      <p>© 2025 SEGMAX PROTEC - Todos os direitos reservados.</p>
-    </div>
-  </footer>
-
-  <!-- 💬 BOTÃO FLUTUANTE WHATSAPP -->
-  <div class="whatsapp-flutuante" aria-hidden="false">
-    <div class="whatsapp-mensagem" id="mensagemWhatsApp" role="status" aria-live="polite">
-      <p>Vamos realizar sua <strong>cotação</strong> em 5min.</p>
-    </div>
-
-    <a href="https://wa.me/5531999097336" target="_blank" rel="noopener" class="whatsapp-botao" id="botaoWhatsApp" aria-label="Abrir WhatsApp">
-      <i class="fa-brands fa-whatsapp" aria-hidden="true"></i>
+  <!-- 🔹 Imagem do meio com botão -->
+  <div class="imagem-com-botao">
+    <img src="img/faixa2.jpg" alt="Imagem 2 - SEGMAX PROTEC">
+    <a href="https://wa.me/5531999097336" target="_blank" class="botao-especialista">
+      <i class="fa-brands fa-whatsapp"></i> Fale com um especialista
     </a>
   </div>
 
-  <div class="espaco" aria-hidden="true"></div>
+  <img src="img/faixa3.jpg" alt="Imagem 3 - SEGMAX PROTEC">
+</section>
 
-  <!-- Scripts -->
-  <script src="js/script.js"></script>
+<!-- 🔹 SEÇÃO DE SERVIÇOS / 4 IMAGENS COM FUNDO PRETO -->
+<section class="servicos">
+  <div class="servico">
+    <img src="img/servico1.jpg" alt="Instalação de Câmeras">
+  </div>
+  <div class="servico">
+    <img src="img/servico2.jpg" alt="Manutenção de Portões">
+  </div>
+  <div class="servico">
+    <img src="img/servico3.jpg" alt="Controle de Acesso">
+  </div>
+  <div class="servico">
+    <img src="img/servico4.jpg" alt="Alarmes e Segurança">
+  </div>
+</section>
+
+<!-- 🔹 SEGUNDA SEÇÃO DE SERVIÇOS (COM ANIMAÇÃO) -->
+<section class="servicos animados">
+  <div class="servico animar">
+    <img src="img/servico5.mp4" alt="Imagem 5 - SEGMAX PROTEC">
+  </div>
+  <div class="servico animar">
+    <img src="img/servico6.jpg" alt="Imagem 6 - SEGMAX PROTEC">
+  </div>
+  <div class="servico animar">
+    <img src="img/servico7.jpg" alt="Imagem 7 - SEGMAX PROTEC">
+  </div>
+  <div class="servico animar">
+    <img src="img/servico8.jpg" alt="Imagem 8 - SEGMAX PROTEC">
+  </div>
+</section>
+
+<!-- 🔹 SEÇÃO NOSSAS INSTALAÇÕES -->
+<section class="instalacoes" id="instalacoes">
+  <div class="instalacoes-esquerda">
+    <h2>Nossas Instalações</h2>
+    <p class="descricao">
+      Veja algumas de nossas instalações em clientes dos mais diversos segmentos.
+    </p>
+
+    <div class="instalacoes-lista">
+      <!-- 🔸 Figura 1 -->
+      <div class="instalacao-item">
+        <img src="img/figura1.jpg" alt="Portão Automático">
+        <h3>Portão Automático</h3>
+        <p>Sistema de instalação e manutenção de portões automatizados.</p>
+      </div>
+
+      <!-- 🔸 Figura 2 -->
+      <div class="instalacao-item">
+        <img src="img/figura2.jpg" alt="Portão Automático">
+        <h3>Portão Automático</h3>
+        <p>Sistema de instalação e manutenção de portões automatizados.</p>
+      </div>
+
+      <!-- 🔸 Figura 3 -->
+      <div class="instalacao-item">
+        <img src="img/figura3.jpg" alt="Portão Automático">
+        <h3>Portão Automático</h3>
+        <p>Sistema de instalação e manutenção de portões automatizados.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 🔹 Lado direito com imagem grande -->
+  <div class="instalacoes-direita">
+    <img src="img/app.jpg" alt="Aplicativo SEGMAX PROTEC">
+  </div>
+</section>
+
+<!-- 💬 SEÇÃO DEPOIMENTOS -->
+<section class="depoimentos" id="depoimentos">
+  <h2>O que nossos clientes dizem</h2>
+  <p class="subtitulo">Depoimentos reais de quem confia na SEGMAX PROTEC</p>
+
+  <div class="depoimentos-container">
+    <!-- 🟡 Depoimento 1 -->
+    <div class="depoimento-card">
+      <img src="img/cliente1.jpg" alt="Cliente satisfeito">
+      <h3>Lucas Andrade</h3>
+      <p>"Profissionais excelentes! Instalaram as câmeras aqui no meu comércio e ficou tudo impecável. Atendimento rápido e preço justo!"</p>
+    </div>
+
+    <!-- 🟡 Depoimento 2 -->
+    <div class="depoimento-card">
+      <img src="img/cliente2.jpg" alt="Cliente feliz">
+      <h3>Mariana Costa</h3>
+      <p>"Tive um problema com o portão à noite, entrei em contato e fui atendida na hora! Super recomendo a SEGMAX PROTEC."</p>
+    </div>
+
+    <!-- 🟡 Depoimento 3 -->
+    <div class="depoimento-card">
+      <img src="img/cliente3.jpg" alt="Cliente">
+      <h3>João Ferreira</h3>
+      <p>"O sistema de câmeras ficou incrível. As imagens são nítidas e a equipe é muito atenciosa. Indico de olhos fechados!"</p>
+    </div>
+  </div>
+</section>
+
+<!-- 💛 SEÇÃO FALE COM UM ESPECIALISTA -->
+<section class="cta-whatsapp">
+  <div class="cta-content">
+    <h2>Fale agora mesmo com um especialista!</h2>
+    <a href="https://wa.me/5531999097336" target="_blank" class="cta-button">
+      Falar com um especialista
+    </a>
+  </div>
+</section>
+
+<!-- ⚫️ ESPAÇO ENTRE AS SEÇÕES -->
+<div class="espaco"></div>
+
+<!-- ⚫️ RODAPÉ -->
+<footer class="rodape">
+  <div class="rodape-container">
+
+    <!-- 🟡 COLUNA ESQUERDA -->
+    <div class="rodape-esquerda">
+      <img src="img/logo.png" alt="Logo SEGMAX PROTEC" class="rodape-logo">
+      <h3>SEGMAX PROTEC</h3>
+      <p>Sistemas de Segurança</p>
+      <p>CNPJ: 24.245.786/0001-75</p>
+    </div>
+
+    <!-- ⚪️ COLUNA CENTRAL -->
+    <div class="rodape-centro">
+      <h3>Mapa do Site</h3>
+      <ul>
+        <li><a href="#inicio">Início</a></li>
+        <li><a href="#blog">Blog</a></li>
+        <li><a href="#contato">Contato</a></li>
+        <li><a href="#politica">Política de Privacidade</a></li>
+        <li><a href="#produtos">Produtos</a></li>
+        <li><a href="#servicos">Serviços</a></li>
+      </ul>
+    </div>
+
+    <!-- 🟢 COLUNA DIREITA -->
+    <div class="rodape-direita">
+      <h3>Contato</h3>
+      <p><i class="fa-brands fa-whatsapp"></i> (31) 9 9909-7336</p>
+      <p><i class="fa-brands fa-instagram"></i> @segmaxprotec</p>
+    </div>
+  </div>
+
+  <!-- ⚫️ RODAPÉ INFERIOR -->
+  <div class="rodape-bottom">
+    <p>© 2025 SEGMAX PROTEC - Todos os direitos reservados.</p>
+  </div>
+</footer>
+
+
+
+<!-- 💬 BOTÃO FLUTUANTE WHATSAPP -->
+<div class="whatsapp-flutuante">
+  <div class="whatsapp-mensagem" id="mensagemWhatsApp">
+    <p>Vamos realizar sua <strong>cotação</strong> em 5min.</p>
+  </div>
+
+  <a href="https://wa.me/5531999097336" target="_blank" class="whatsapp-botao" id="botaoWhatsApp">
+    <i class="fa-brands fa-whatsapp"></i>
+  </a>
+</div>
+
+
 </body>
 </html>
