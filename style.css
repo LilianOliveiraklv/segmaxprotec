@@ -45,11 +45,13 @@ body{ background:var(--gray-1); color:var(--dark); -webkit-font-smoothing:antial
 .logo-menor{ width:150px; max-width:40vw; height:auto; }
 
 /* Menu default desktop */
-.menu{
-  display:flex;
-  gap:24px;
-  align-items:center;
+.menu {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  margin-top: 5px; /* 🔹 diminui a distância */
 }
+
 .menu a{ text-decoration:none; color:#000; font-weight:700; transition:color .2s, transform .15s; }
 .menu a:hover{ color:var(--yellow); transform:scale(1.04); }
 
