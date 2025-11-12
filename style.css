@@ -34,6 +34,12 @@ body{ background:var(--gray-1); color:var(--dark); -webkit-font-smoothing:antial
 .topo .lado-direito{ color:var(--yellow); font-weight:700; text-transform:uppercase; letter-spacing:.6px; }
 
 /* ============================== LOGO + MENU ============================== */
+.banner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
 .logo-menu{
   display:flex;
   justify-content:space-between;
