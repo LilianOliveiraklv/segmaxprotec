@@ -38,7 +38,7 @@ body{ background:var(--gray-1); color:var(--dark); -webkit-font-smoothing:antial
   display:flex;
   justify-content:space-between;
   align-items:center;
-  padding:20px;
+  padding:30px;
   background:#9E9E9E;
 }
 .logo-area{ display:flex; align-items:center; gap:12px; }
