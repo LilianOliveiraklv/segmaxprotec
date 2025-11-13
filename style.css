@@ -278,3 +278,87 @@ body{ background:var(--gray-1); color:var(--dark); -webkit-font-smoothing:antial
   .botao-whats{ padding:10px 16px; font-size:14px; }
   .whatsapp-mensagem{ display:none; } /* para telas muito pequenas podemos esconder a mensagem */
 }
+
+/* 🔸 FAIXA DE IMAGENS SEGMAX PROTEC */
+.faixa-imagens {
+  display: flex;
+  width: 100%;
+  overflow: hidden;
+  align-items: center;
+  justify-content: center;
+  gap: 0; /* sem espaçamento entre imagens */
+  background-color: #000;
+}
+
+.faixa-imagens img {
+  width: 33.3333%;
+  height: auto;
+  object-fit: contain; /* mostra a imagem inteira */
+  display: block;
+  background-color: #000; /* cor de fundo elegante */
+  transition: transform 0.3s ease;
+}
+
+.faixa-imagens img:hover {
+  transform: scale(1.03);
+}
+
+/* 🔸 IMAGEM COM BOTÃO CENTRAL */
+.imagem-com-botao {
+  position: relative;
+  width: 33.3333%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #000;
+}
+
+.imagem-com-botao img {
+  width: 100%;
+  height: auto;
+  object-fit: contain;
+  display: block;
+}
+
+/* 🔸 BOTÃO DOURADO */
+.botao-especialista {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #d4af37; /* dourado */
+  color: #000;
+  padding: 12px 25px;
+  border-radius: 30px;
+  text-decoration: none;
+  font-weight: 700;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
+  transition: all 0.3s ease;
+}
+
+.botao-especialista:hover {
+  background: #000;
+  color: #d4af37;
+  transform: translateX(-50%) scale(1.05);
+}
+
+/* 🔸 RESPONSIVIDADE */
+@media (max-width: 900px) {
+  .faixa-imagens {
+    flex-direction: column;
+  }
+
+  .faixa-imagens img,
+  .imagem-com-botao img {
+    width: 100%;
+    height: auto;
+    object-fit: contain;
+  }
+
+  .botao-especialista {
+    bottom: 15px;
+    font-size: 14px;
+    padding: 10px 20px;
+  }
+}
+
