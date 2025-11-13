@@ -362,3 +362,59 @@ body{ background:var(--gray-1); color:var(--dark); -webkit-font-smoothing:antial
   }
 }
 
+/* 🔸 Bloco da câmera logo abaixo do menu */
+.bloco-camera {
+  position: relative;
+  width: 100%;
+  text-align: center;
+  margin-top: 25px;
+}
+
+/* 🔸 Imagem da câmera */
+.bloco-camera .camera {
+  width: 350px;        /* ajuste como quiser */
+  height: auto;
+  display: block;
+  margin: 0 auto;
+  object-fit: contain;
+}
+
+/* 🔸 Botão do WhatsApp colado na câmera */
+.botao-whats {
+  position: relative;
+  top: -25px;          /* sobe o botão para colar na câmera */
+  background: #25d366;
+  color: #fff;
+  padding: 12px 25px;
+  border-radius: 30px;
+  font-weight: 700;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 5px 15px rgba(0,0,0,.25);
+  transition: .3s ease;
+}
+
+/* 🔸 Ícone dentro do botão */
+.botao-whats i {
+  font-size: 20px;
+}
+
+/* 🔸 Hover */
+.botao-whats:hover {
+  background: #1ebe5d;
+  transform: scale(1.05);
+}
+
+/* 🔸 Responsivo */
+@media (max-width: 600px){
+  .bloco-camera .camera {
+    width: 250px;
+  }
+
+  .botao-whats {
+    top: -20px;
+    padding: 10px 20px;
+  }
+}
