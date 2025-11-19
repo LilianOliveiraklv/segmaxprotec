@@ -1287,6 +1287,16 @@ header nav {
   justify-content: center;
   align-items: center;
 }
+.coluna-direita a {
+  color: white;
+  text-decoration: none;
+}
+.coluna-direita a:hover {
+  opacity: 0.8;
+}
+
+
+
 footer {
   width: 100%;
   display: flex;
@@ -1313,4 +1323,3 @@ footer {
   width: 100%;
   margin-top: 20px;
 }
-
