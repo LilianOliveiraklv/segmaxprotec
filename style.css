@@ -1323,3 +1323,23 @@ footer {
   width: 100%;
   margin-top: 20px;
 }
+
+.btn-whatsapp {
+  display: inline-block;
+  background: #ffffff;
+  color: #000000;
+  padding: 12px 25px;
+  border-radius: 8px;
+  border: 2px solid #000;
+  font-size: 16px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: 0.3s;
+}
+
+/* Efeito ao passar o mouse */
+.btn-whatsapp:hover {
+  background: #F7D007; /* Amarelo da sua identidade */
+  color: #000;
+  border-color: #F7D007;
+}
