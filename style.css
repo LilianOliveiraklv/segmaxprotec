@@ -1324,26 +1324,47 @@ footer {
   margin-top: 20px;
 }
 
-.btn-whatsapp {
+/* Estilos específicos para garantir prioridade e funcionamento */
+.secao-especialista { text-align: center; padding: 30px 15px; }
+
+.secao-especialista .btn-whatsapp {
   display: inline-block;
-  background: #ffffff;
-  color: #000000;
-  padding: 12px 25px;
-  border-radius: 8px;
-  border: 2px solid #000;
-  font-size: 16px;
-  font-weight: 600;
+  background: #ffffff;            /* fundo branco */
+  color: #000000;                 /* texto preto */
+  padding: 14px 28px;             /* tamanho do botão */
+  border-radius: 10px;            /* cantos arredondados */
+  border: 2px solid #000000;      /* borda preta */
+  font-size: 18px;
+  font-weight: 700;
   text-decoration: none;
-  transition: 0.3s;
+  transition: background 0.25s ease, transform 0.15s ease, box-shadow 0.25s ease;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  -webkit-tap-highlight-color: transparent;
 }
 
-/* Efeito ao passar o mouse */
-.btn-whatsapp:hover {
-  background: #F7D007; /* Amarelo da sua identidade */
-  color: #000;
+/* Hover para desktop */
+.secao-especialista .btn-whatsapp:hover,
+.secao-especialista .btn-whatsapp:focus {
+  background: #F7D007;            /* amarelo (identidade) */
+  color: #000000;                 /* garante contraste */
   border-color: #F7D007;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.12);
 }
 
-.btn-whatsapp {
-  box-shadow: 0px 0px 12px rgba(0,0,0,0.2);
+/* Acessibilidade: tecla TAB */
+.secao-especialista .btn-whatsapp:focus {
+  outline: 3px solid rgba(247,208,7,0.25);
+  outline-offset: 3px;
+}
+
+/* Responsivo: botão mais largo em telas pequenas */
+@media (max-width: 480px) {
+  .secao-especialista .btn-whatsapp {
+    width: 100%;
+    max-width: 420px;
+    box-sizing: border-box;
+    padding: 16px;
+    font-size: 17px;
+  }
 }
