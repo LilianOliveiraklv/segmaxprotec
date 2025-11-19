@@ -1343,3 +1343,7 @@ footer {
   color: #000;
   border-color: #F7D007;
 }
+
+.btn-whatsapp {
+  box-shadow: 0px 0px 12px rgba(0,0,0,0.2);
+}
