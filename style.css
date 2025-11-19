@@ -1287,3 +1287,30 @@ header nav {
   justify-content: center;
   align-items: center;
 }
+footer {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;   /* Centraliza tudo */
+  text-align: center;
+}
+
+.rodape-container {
+  width: 100%;
+  display: flex;
+  justify-content: center;   /* Centraliza as colunas lado a lado */
+  flex-wrap: wrap;
+  margin: 0 auto;
+}
+
+.coluna {
+  text-align: center;        /* Texto centralizado */
+  margin: 10px 20px;
+}
+
+.linha-final {
+  text-align: center;
+  width: 100%;
+  margin-top: 20px;
+}
+
