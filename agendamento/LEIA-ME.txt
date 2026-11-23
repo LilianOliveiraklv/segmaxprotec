@@ -1,0 +1,49 @@
+SEGMAX PROTEC — AGENDAMENTO ONLINE
+
+CLIENTE SEM CADASTRO
+O cliente informa nome, telefone/WhatsApp, cidade e serviço. Depois visualiza somente
+datas e horários disponíveis para o serviço escolhido.
+
+REGRAS DE AGENDA
+- Segunda a sábado, das 08:00 às 20:00.
+- Instalações e manutenções: 4 horas.
+- Visita técnica: 1 hora.
+- Inícios de horário de hora em hora.
+- Último início para instalação/manutenção: 16:00 (término às 20:00).
+- Último início para visita: 19:00 (término às 20:00).
+- A reserva é atribuída automaticamente a um técnico livre.
+- Técnicos diferentes podem ter atendimentos simultâneos.
+- O mesmo técnico não recebe serviços com horários sobrepostos.
+- Datas disponíveis consultadas nos próximos 45 dias.
+
+EXEMPLO
+Técnico 1: instalação às 08:00, término previsto às 12:00.
+Esse técnico poderá receber outro serviço a partir das 12:00.
+Técnico 2: poderá receber um serviço às 08:00 se estiver livre.
+
+INSTALAÇÃO
+1. Crie um projeto em https://supabase.com.
+2. Execute supabase.sql no SQL Editor.
+3. Em Project Settings > API, copie Project URL e anon/public key.
+4. Substitua as duas configurações no início de app.js.
+5. Crie usuários dos técnicos em Authentication > Users.
+6. Para cada técnico, execute:
+   insert into public.technicians(user_id,full_name)
+   values ('UUID-COPIADO','Nome do técnico');
+7. Publique index.html, style.css e app.js em Netlify, Vercel ou GitHub Pages.
+
+ATENÇÃO
+- O pacote ainda não está conectado ao Supabase nem publicado.
+- A confirmação aparece na tela; WhatsApp automático não está integrado.
+- Nunca coloque a chave service_role no navegador.
+- A lista de cidades está no app.js e deve ser conferida pela empresa para validar
+  a cobertura de até 100 km de Santa Luzia/MG.
+- “Outro serviço” reserva 4 horas por padrão.
+- Faça testes de agendamento e permissões antes de divulgar.
+
+
+HORÁRIO DE FUNCIONAMENTO ATUALIZADO
+- Atendimento de segunda a sábado, das 08h às 20h.
+- Almoço bloqueado das 12h às 13h: não são oferecidos horários de início nesse intervalo.
+- Instalação/manutenção têm 4 horas efetivas de trabalho; visita técnica, 1 hora.
+- Se o atendimento começar antes do almoço e atravessar 12h, a agenda acrescenta 1 hora ao bloqueio do técnico para respeitar a pausa. Exemplo: instalação às 10h termina às 15h.

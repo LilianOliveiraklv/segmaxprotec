@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SEGMAX PROTEC | Agendamento</title><link rel="stylesheet" href="style.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script></head>
+<body>
+<header><div class="brand"><span class="shield">◆</span><div><b>SEGMAX PROTEC</b><small>AGENDAMENTO ONLINE</small></div></div><button id="loginOpen" class="outline">Área do técnico</button></header>
+<main>
+<section class="hero"><p class="eyebrow">SEGURANÇA • TECNOLOGIA • CONFIANÇA</p><h1>Agende seu atendimento<br><em>sem complicação.</em></h1><p>Sem cadastro e sem senha. Escolha o serviço e reserve um horário disponível.</p></section>
+<section class="panel"><h2>Agendamento rápido</h2><p class="muted">Preencha seus dados. Não é necessário criar uma conta.</p>
+<form id="bookingForm"><div class="grid">
+<label>Nome completo<input required name="name" autocomplete="name" maxlength="120" placeholder="Seu nome"></label>
+<label>Telefone / WhatsApp<input required name="phone" autocomplete="tel" maxlength="30" placeholder="(31) 99999-9999"></label>
+<label>Cidade<select required name="city" id="city"><option value="">Selecione sua cidade</option></select></label>
+<label>Serviço<select required name="service"><option value="">Selecione</option><option>Instalação de câmeras</option><option>Manutenção de câmeras</option><option>Instalação de portão automatizado</option><option>Manutenção de portão automatizado</option><option>Visita técnica</option><option>Outro serviço</option></select></label>
+<label class="wide">Datas disponíveis<select required name="date" id="date"><option value="">Carregando datas disponíveis...</option></select></label>
+<label class="wide">Horários disponíveis<select required name="slot" id="slot" disabled><option value="">Escolha primeiro uma data</option></select></label>
+<label class="wide">Observações (opcional)<textarea name="notes" rows="2" maxlength="500" placeholder="Descreva brevemente o que precisa"></textarea></label>
+</div><button class="primary" type="submit">Confirmar agendamento</button><div id="bookingMessage" role="status"></div></form></section>
+<section class="panel hidden" id="authPanel"><div class="panelHead"><div><h2>Área do técnico</h2><p class="muted">Acesso restrito à equipe autorizada.</p></div><button id="closeAuth" class="outline">Fechar</button></div>
+<form id="loginForm"><div class="grid"><label>E-mail<input type="email" name="email" required></label><label>Senha<input type="password" name="password" required></label></div><button class="primary">Entrar</button><div id="loginMessage" role="status"></div></form></section>
+<section class="panel hidden" id="dashboard"><div class="panelHead"><div><h2>Painel de atendimentos</h2><p class="muted" id="who"></p></div><button id="logout" class="outline">Sair</button></div>
+<div class="filters"><label>Data<input type="date" id="filterDate"></label><label>Status<select id="filterStatus"><option value="">Todos</option><option>Agendado</option><option>Em andamento</option><option>Concluído</option><option>Cancelado</option><option>Reagendar</option></select></label><button id="refresh" class="outline">Atualizar</button></div><div id="appointments" class="appointments"></div></section>
+<footer>© SEGMAX PROTEC · Atendimento e agendamento online</footer></main><script src="app.js"></script></body></html>
