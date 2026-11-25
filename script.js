@@ -103,7 +103,7 @@ WhatsApp: ${dados.whatsapp}
 Necessidade: ${dados.necessidade}`;
 
         setTimeout(() => {
-            window.open("https://wa.me/5531999097336?text=" + encodeURIComponent(msg), "_blank");
+            window.open("https://wa.me/5531984205162?text=" + encodeURIComponent(msg), "_blank");
         }, 1500);
 
         etapa++;
