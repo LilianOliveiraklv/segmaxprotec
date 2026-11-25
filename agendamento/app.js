@@ -209,7 +209,114 @@ $("#bookingForm").onsubmit = async e => {
     button.textContent = "Solicitar agendamento";
   }
 };
+// CARTÕES DE DISPONIBILIDADE
 
+function renderAvailabilityCards(selectId, containerId) {
+  const select = document.getElementById(selectId);
+  const container = document.getElementById(containerId);
+
+  if (!select || !container) return;
+
+  container.replaceChildren();
+
+  const options = Array.from(select.options)
+    .filter(o => o.value && !o.disabled);
+
+  if (select.disabled || !options.length) {
+    const message = document.createElement("p");
+    message.className = "availability-message";
+    message.textContent =
+      select.options[0]?.textContent ||
+      "Nenhuma opção disponível.";
+
+    container.append(message);
+    return;
+  }
+
+  options.forEach(o => {
+    const card = document.createElement("button");
+
+    card.type = "button";
+    card.className = "availability-card";
+
+    card.classList.toggle(
+      "selected", select.value === o.value
+    );
+
+    card.setAttribute(
+      "aria-pressed",
+      String(select.value === o.value)
+    );
+
+    if (selectId === "date") {
+      const day = new Date(o.value + "T12:00:00");
+
+      const weekday = document.createElement("span");
+      weekday.className = "card-weekday";
+      weekday.textContent = day.toLocaleDateString(
+        "pt-BR", {weekday:"short"}
+      );
+
+      const number = document.createElement("strong");
+      number.className = "card-day";
+      number.textContent = day.toLocaleDateString(
+        "pt-BR", {day:"2-digit"}
+      );
+
+      const month = document.createElement("span");
+      month.className = "card-month";
+      month.textContent = day.toLocaleDateString(
+        "pt-BR", {month:"short",year:"numeric"}
+      );
+
+      card.append(weekday, number, month);
+
+    } else {
+      card.textContent = o.textContent;
+    }
+
+    card.onclick = () => {
+      select.value = o.value;
+
+      select.dispatchEvent(
+        new Event("change", {bubbles:true})
+      );
+
+      renderAvailabilityCards(
+        selectId, containerId
+      );
+    };
+
+    container.append(card);
+  });
+}
+
+function activateAvailabilityCards(
+  selectId, containerId
+) {
+  const select = document.getElementById(selectId);
+  const container = document.getElementById(containerId);
+
+  if (!select || !container) return;
+
+  const refresh = () =>
+    renderAvailabilityCards(selectId, containerId);
+
+  const observer = new MutationObserver(refresh);
+
+  observer.observe(select, {
+    childList:true,
+    subtree:true,
+    attributes:true
+  });
+
+  select.addEventListener("change", refresh);
+
+  refresh();
+}
+
+activateAvailabilityCards("date", "dateCards");
+activateAvailabilityCards("slot", "slotCards");
 // AUTENTICAÇÃO
 
 $("#loginOpen").textContent = "Área da equipe";
