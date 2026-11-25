@@ -56,3 +56,36 @@ async function loadAppointments(){
 function esc(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
 $("#logout").onclick=async()=>{await db.auth.signOut();$("#dashboard").classList.add("hidden")};$("#refresh").onclick=loadAppointments;$("#filterDate").onchange=loadAppointments;$("#filterStatus").onchange=loadAppointments;
 if(db){loadDates();db.auth.getSession().then(({data})=>{if(data.session)showDashboard()})}
+
+
+if (db) {
+  db.auth.onAuthStateChange((event) => {
+    if (event === "PASSWORD_RECOVERY") {
+      setTimeout(async () => {
+        const senha = prompt(
+          "Digite sua nova senha (mínimo de 8 caracteres):"
+        );
+
+        if (!senha || senha.length < 8) {
+          alert("Senha inválida. Solicite uma nova recuperação.");
+          await db.auth.signOut();
+          location.replace(location.pathname);
+          return;
+        }
+
+        const { error } = await db.auth.updateUser({
+          password: senha
+        });
+
+        if (error) {
+          alert("Erro ao alterar a senha: " + error.message);
+        } else {
+          alert("Senha alterada com sucesso!");
+        }
+
+        await db.auth.signOut();
+        location.replace(location.pathname);
+      }, 0);
+    }
+  });
+}
