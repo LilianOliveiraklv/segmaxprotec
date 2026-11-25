@@ -417,7 +417,7 @@ async function showDashboard() {
       return;
     }
 
-    name = "Técnico: " + data.full_name;
+    name = "Equipe SEGMAX PROTEC | " + data.full_name;
   }
 
   $("#authPanel").classList.add("hidden");
@@ -425,7 +425,7 @@ async function showDashboard() {
 
   $("#dashboard h2").textContent = isAdmin
     ? "Painel administrativo"
-    : "Minha agenda";
+    : "Agenda da equipe";
 
   $("#who").textContent = name;
 
@@ -491,10 +491,11 @@ async function loadAppointments() {
       <p>${esc(a.phone)} · ${esc(a.city)}</p>
       <p>${esc(a.notes || "Sem observações")}</p>
       <p>Duração na agenda: ${esc(a.duration_minutes)} minutos</p>
-      ${isAdmin ? `<p>Técnico: ${esc(
-        tech?.full_name ||
-        (a.technician_id ? "Atribuído" : "Não atribuído")
-      )}</p>` : ""}
+      ${isAdmin ? `<p>Equipe: ${
+  a.technician_id
+    ? "SEGMAX PROTEC - Breno e Vinícius"
+    : "Aguardando aprovação"
+}</p>` : ""}
     `;
 
     card.append(info,actions);
@@ -515,12 +516,18 @@ async function loadAppointments() {
 // APROVAÇÃO ADMINISTRATIVA
 
 function renderApproval(a,root) {
-  const tech = document.createElement("select");
-  tech.append(option("","Selecione o técnico"));
+const tech = document.createElement("select");
 
-  technicians.forEach(t =>
-    tech.append(option(t.user_id,t.full_name))
-  );
+const equipeAtiva = technicians[0];
+
+tech.append(option(
+  equipeAtiva?.user_id || "",
+  equipeAtiva
+    ? "Equipe SEGMAX PROTEC"
+    : "Nenhum técnico ativo"
+));
+
+tech.disabled = true;
 
   const date = document.createElement("input");
   date.type = "date";
@@ -605,7 +612,7 @@ function renderApproval(a,root) {
     if (error) {
       message.textContent =
         error.message.includes("TECHNICIAN_BUSY")
-          ? "Técnico ocupado. Escolha outro técnico ou horário."
+          ? "Equipe ocupada. Escolha outro horário."
           : "Não foi possível aprovar: " + error.message;
 
       refuse.disabled = false;
