@@ -67,7 +67,7 @@ Enviado pelo site.`;
 
     // Abre o WhatsApp
     window.open(
-        "https://wa.me/5531999097336?text=" + encodeURIComponent(mensagem),
+        "https://wa.me/5531984205162?text=" + encodeURIComponent(mensagem),
         "_blank"
     );
     
