@@ -12,8 +12,25 @@
 <label>Telefone / WhatsApp<input required name="phone" autocomplete="tel" maxlength="30" placeholder="(31) 99999-9999"></label>
 <label>Cidade<select required name="city" id="city"><option value="">Selecione sua cidade</option></select></label>
 <label>Serviço<select required name="service"><option value="">Selecione</option><option>Instalação de câmeras</option><option>Manutenção de câmeras</option><option>Instalação de portão automatizado</option><option>Manutenção de portão automatizado</option><option>Visita técnica</option><option>Outro serviço</option></select></label>
-<label class="wide">Datas disponíveis<select required name="date" id="date"><option value="">Carregando datas disponíveis...</option></select></label>
-<label class="wide">Horários disponíveis<select required name="slot" id="slot" disabled><option value="">Escolha primeiro uma data</option></select></label>
+<div class="wide">
+  <label for="date">Datas disponíveis</label>
+
+  <select required name="date" id="date">
+    <option value="">Selecione o serviço</option>
+  </select>
+
+  <div id="dateCards" class="date-cards"></div>
+</div>
+
+<div class="wide">
+  <label for="slot">Horários disponíveis</label>
+
+  <select required name="slot" id="slot" disabled>
+    <option value="">Escolha primeiro uma data</option>
+  </select>
+
+  <div id="slotCards" class="slot-cards"></div>
+</div>
 <label class="wide">Observações (opcional)<textarea name="notes" rows="2" maxlength="500" placeholder="Descreva brevemente o que precisa"></textarea></label>
 </div><button class="primary" type="submit">Confirmar agendamento</button><div id="bookingMessage" role="status"></div></form></section>
 <section class="panel hidden" id="authPanel"><div class="panelHead"><div><h2>Área do técnico</h2><p class="muted">Acesso restrito à equipe autorizada.</p></div><button id="closeAuth" class="outline">Fechar</button></div>
