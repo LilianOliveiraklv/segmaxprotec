@@ -2420,3 +2420,1535 @@
     });
 
 })();
+
+
+// ==========================================
+// SEGMAX PROTEC - ERP 2.0
+// MODULO FINANCEIRO - PARTE 3
+// MATERIAIS E DESPESAS OPERACIONAIS
+// ==========================================
+
+"use strict";
+
+(() => {
+
+    const ERP = window.SEGMAX;
+
+    if (!ERP) return;
+
+    const db = ERP.db;
+
+    const esc = ERP.escapeHTML;
+
+    const $ = selector =>
+        document.querySelector(selector);
+
+    const categories = [
+
+        "Combustível",
+        "Ajudante",
+        "Alimentação",
+        "Pedágio",
+        "Estacionamento",
+        "Publicidade",
+        "Ferramentas",
+        "Manutenção de veículo",
+        "Internet e telefone",
+        "Despesas administrativas",
+        "Outros"
+
+    ];
+
+    const methods = [
+
+        "Pix",
+        "Dinheiro",
+        "Cartão de débito",
+        "Cartão de crédito",
+        "Transferência",
+        "Boleto",
+        "Outros"
+
+    ];
+
+    const units = [
+
+        "Unidade",
+        "Metro",
+        "Kit",
+        "Caixa",
+        "Pacote",
+        "Rolo",
+        "Litro",
+        "Outros"
+
+    ];
+
+    // ======================================
+    // MODULO DE CUSTOS
+    // ======================================
+
+    async function loadCosts(type) {
+
+        const version = ERP.getSessionVersion();
+
+        const user = ERP.getUser();
+
+        if (!user) return;
+
+        const material = type === "material";
+
+        const container = material
+
+            ? $("#materiaisContent")
+
+            : $("#despesasContent");
+
+        const table = material
+
+            ? "service_materials"
+
+            : "daily_expenses";
+
+        container.textContent = "Carregando...";
+
+        const { data: partners, error } = await db
+
+            .from("technicians")
+
+            .select("user_id,full_name,active")
+
+            .order("full_name");
+
+        if (version !== ERP.getSessionVersion()) {
+            return;
+        }
+
+        if (error) {
+
+            container.textContent =
+
+                "Não foi possível consultar os sócios.";
+
+            return;
+
+        }
+
+        const names = new Map(
+
+            partners.map(partner => [
+
+                partner.user_id,
+
+                partner.full_name
+
+            ])
+
+        );
+
+        // ==================================
+        // FORMULARIO
+        // ==================================
+
+        container.innerHTML = `
+
+            <div class="form-card">
+
+                <h2>
+
+                    ${material
+
+                        ? "Registrar material"
+
+                        : "Registrar despesa"}
+
+                </h2>
+
+                <p class="muted">
+
+                    ${material
+
+                        ? "Vincule o custo à ordem de serviço."
+
+                        : "Registre os gastos operacionais da empresa."}
+
+                </p>
+
+                <form data-field="form">
+
+                    <div class="form-grid">
+
+                        ${material ? `
+
+                            <div class="full-width">
+
+                                <label>
+                                    Buscar cliente
+                                </label>
+
+                                <input
+                                    data-field="search"
+                                    placeholder="Nome do cliente">
+
+                                <button
+                                    type="button"
+                                    data-field="searchButton"
+                                    class="btn-secondary">
+
+                                    Buscar serviços
+
+                                </button>
+
+                            </div>
+
+                            <div class="full-width">
+
+                                <label>
+                                    Ordem de serviço *
+                                </label>
+
+                                <select
+                                    data-field="service"
+                                    required>
+
+                                    <option value="">
+                                        Selecione o serviço
+                                    </option>
+
+                                </select>
+
+                            </div>
+
+                            <div class="full-width">
+
+                                <label>
+                                    Nome do material *
+                                </label>
+
+                                <input
+                                    data-field="description"
+                                    maxlength="150"
+                                    placeholder="Ex.: Motor Rossi"
+                                    required>
+
+                            </div>
+
+                            <div>
+
+                                <label>Quantidade *</label>
+
+                                <input
+                                    data-field="quantity"
+                                    type="number"
+                                    min="0.001"
+                                    step="0.001"
+                                    value="1"
+                                    required>
+
+                            </div>
+
+                            <div>
+
+                                <label>Unidade</label>
+
+                                <select
+                                    data-field="unit">
+                                </select>
+
+                            </div>
+
+                            <div>
+
+                                <label>
+                                    Custo unitário (R$) *
+                                </label>
+
+                                <input
+                                    data-field="amount"
+                                    type="number"
+                                    min="0.01"
+                                    step="0.01"
+                                    required>
+
+                            </div>
+
+                        ` : `
+
+                            <div>
+
+                                <label>Categoria *</label>
+
+                                <select
+                                    data-field="category"
+                                    required>
+                                </select>
+
+                            </div>
+
+                            <div>
+
+                                <label>
+                                    Valor da despesa (R$) *
+                                </label>
+
+                                <input
+                                    data-field="amount"
+                                    type="number"
+                                    min="0.01"
+                                    step="0.01"
+                                    required>
+
+                            </div>
+
+                            <div class="full-width">
+
+                                <label>Descrição *</label>
+
+                                <input
+                                    data-field="description"
+                                    maxlength="250"
+                                    placeholder="Ex.: Diária do ajudante"
+                                    required>
+
+                            </div>
+
+                            <div>
+
+                                <label>
+                                    Forma de pagamento
+                                </label>
+
+                                <select
+                                    data-field="method"
+                                    required>
+                                </select>
+
+                            </div>
+
+                        `}
+
+                        <div>
+
+                            <label>Pago por *</label>
+
+                            <select
+                                data-field="partner"
+                                required>
+                            </select>
+
+                        </div>
+
+                        <div>
+
+                            <label>Data do gasto *</label>
+
+                            <input
+                                data-field="date"
+                                type="date"
+                                required>
+
+                        </div>
+
+                        <div class="full-width">
+
+                            <label>Observações</label>
+
+                            <textarea
+                                data-field="notes"
+                                maxlength="1000">
+                            </textarea>
+
+                        </div>
+
+                        <div class="full-width">
+
+                            <div class="stat-card">
+
+                                <span>Custo total</span>
+
+                                <strong data-field="total">
+                                    R$ 0,00
+                                </strong>
+
+                            </div>
+
+                        </div>
+
+                        <div class="full-width">
+
+                            <button
+                                type="submit"
+                                data-field="save"
+                                class="btn-primary">
+
+                                Registrar gasto
+
+                            </button>
+
+                        </div>
+
+                    </div>
+
+                </form>
+
+                <div
+                    data-field="message"
+                    role="status"
+                    aria-live="polite">
+                </div>
+
+            </div>
+
+            <div class="table-card">
+
+                <h2>
+
+                    ${material
+
+                        ? "Materiais registrados"
+
+                        : "Despesas registradas"}
+
+                </h2>
+
+                <div class="filters">
+
+                    <div>
+
+                        <label>Data inicial</label>
+
+                        <input
+                            data-field="start"
+                            type="date">
+
+                    </div>
+
+                    <div>
+
+                        <label>Data final</label>
+
+                        <input
+                            data-field="end"
+                            type="date">
+
+                    </div>
+
+                    <div>
+
+                        <label>Pago por</label>
+
+                        <select data-field="filterPartner">
+
+                            <option value="">
+                                Todos
+                            </option>
+
+                        </select>
+
+                    </div>
+
+                    <button
+                        data-field="filter"
+                        class="btn-secondary">
+
+                        Consultar
+
+                    </button>
+
+                </div>
+
+                <div
+                    data-field="list"
+                    class="table-wrapper">
+                </div>
+
+                <div class="actions">
+
+                    <button
+                        data-field="previous"
+                        class="btn-secondary"
+                        disabled>
+
+                        Anterior
+
+                    </button>
+
+                    <button
+                        data-field="next"
+                        class="btn-secondary"
+                        disabled>
+
+                        Próxima
+
+                    </button>
+
+                </div>
+
+                <div class="stat-card">
+
+                    <span>Total desta página</span>
+
+                    <strong data-field="pageTotal">
+                        R$ 0,00
+                    </strong>
+
+                </div>
+
+            </div>
+
+        `;
+
+        // ==================================
+        // CAMPOS E VARIAVEIS
+        // ==================================
+
+        const field = name =>
+
+            container.querySelector(
+
+                `[data-field="${name}"]`
+
+            );
+
+        const form = field("form");
+
+        const partnerSelect = field("partner");
+
+        const filterPartner = field("filterPartner");
+
+        let saving = false;
+
+        let page = 0;
+
+        let listRequest = 0;
+
+        let searchRequest = 0;
+
+        const pageSize = 25;
+
+        const services = new Map();
+
+        function validSession() {
+
+            return (
+
+                version === ERP.getSessionVersion() &&
+
+                form.isConnected
+
+            );
+
+        }
+
+        function message(text, type = "") {
+
+            if (!validSession()) return;
+
+            const element = field("message");
+
+            element.textContent = text;
+
+            element.className = type
+
+                ? `message-${type}`
+
+                : "";
+
+        }
+
+        function addOptions(element, options) {
+
+            options.forEach(value => {
+
+                element.append(
+
+                    new Option(value, value)
+
+                );
+
+            });
+
+        }
+
+        if (material) {
+
+            addOptions(field("unit"), units);
+
+        } else {
+
+            addOptions(field("category"), categories);
+
+            addOptions(field("method"), methods);
+
+        }
+
+        // ==================================
+        // IDENTIFICAR QUEM PAGOU
+        // ==================================
+
+        if (ERP.isAdmin()) {
+
+            partnerSelect.append(
+
+                new Option("Selecione o sócio", "")
+
+            );
+
+            partners
+
+                .filter(partner => partner.active)
+
+                .forEach(partner => {
+
+                    partnerSelect.append(
+
+                        new Option(
+
+                            partner.full_name,
+
+                            partner.user_id
+
+                        )
+
+                    );
+
+                });
+
+        } else {
+
+            partnerSelect.append(
+
+                new Option(
+
+                    names.get(user.id) || "Meu usuário",
+
+                    user.id
+
+                )
+
+            );
+
+            partnerSelect.disabled = true;
+
+        }
+
+        partners.forEach(partner => {
+
+            filterPartner.append(
+
+                new Option(
+
+                    partner.full_name,
+
+                    partner.user_id
+
+                )
+
+            );
+
+        });
+
+        field("date").value = ERP.today();
+
+        field("date").max = ERP.today();
+
+        field("start").value =
+
+            ERP.today().slice(0, 8) + "01";
+
+        field("end").value = ERP.today();
+
+        // ==================================
+        // BUSCAR ORDEM DE SERVICO
+        // ==================================
+
+        async function searchServices() {
+
+            if (!material || !validSession()) return;
+
+            const request = ++searchRequest;
+
+            const select = field("service");
+
+            services.clear();
+
+            select.replaceChildren(
+
+                new Option("Carregando...", "")
+
+            );
+
+            select.disabled = true;
+
+            const search = field("search")
+
+                .value.trim()
+
+                .replace(/[%_\\]/g, "");
+
+            let query = db
+
+                .from("service_financial_summary")
+
+                .select(
+
+                    "service_order_id,customer_name," +
+
+                    "service_type,service_date"
+
+                )
+
+                .order("service_date", {
+
+                    ascending: false
+
+                })
+
+                .limit(50);
+
+            if (search) {
+
+                query = query.ilike(
+
+                    "customer_name",
+
+                    `%${search}%`
+
+                );
+
+            }
+
+            const { data, error } = await query;
+
+            if (
+
+                !validSession() ||
+
+                request !== searchRequest
+
+            ) return;
+
+            select.replaceChildren(
+
+                new Option("Selecione o serviço", "")
+
+            );
+
+            select.disabled = false;
+
+            if (error) {
+
+                message(
+
+                    "Não foi possível consultar os serviços.",
+
+                    "error"
+
+                );
+
+                return;
+
+            }
+
+            data.forEach(service => {
+
+                services.set(
+
+                    service.service_order_id,
+
+                    service
+
+                );
+
+                select.append(
+
+                    new Option(
+
+                        `${service.customer_name} | ` +
+
+                        `${service.service_type} | ` +
+
+                        `${ERP.formatDate(service.service_date)}`,
+
+                        service.service_order_id
+
+                    )
+
+                );
+
+            });
+
+            if (!data.length) {
+
+                select.replaceChildren(
+
+                    new Option(
+
+                        "Nenhum serviço encontrado",
+
+                        ""
+
+                    )
+
+                );
+
+            }
+
+        }
+
+        if (material) {
+
+            field("searchButton").addEventListener(
+
+                "click",
+
+                searchServices
+
+            );
+
+            field("search").addEventListener(
+
+                "keydown",
+
+                event => {
+
+                    if (event.key === "Enter") {
+
+                        event.preventDefault();
+
+                        void searchServices();
+
+                    }
+
+                }
+
+            );
+
+        }
+
+        // ==================================
+        // CALCULAR CUSTO
+        // ==================================
+
+        function calculateTotal() {
+
+            const amount = Number(
+
+                field("amount").value
+
+            );
+
+            const quantity = material
+
+                ? Number(field("quantity").value)
+
+                : 1;
+
+            const total = Math.round(
+
+                amount * quantity * 100
+
+            ) / 100;
+
+            field("total").textContent =
+
+                ERP.money(total);
+
+            return total;
+
+        }
+
+        field("amount").addEventListener(
+
+            "input",
+
+            calculateTotal
+
+        );
+
+        if (material) {
+
+            field("quantity").addEventListener(
+
+                "input",
+
+                calculateTotal
+
+            );
+
+        }
+
+        // ==================================
+        // CONSULTAR GASTOS
+        // ==================================
+
+        async function loadList() {
+
+            if (!validSession()) return;
+
+            const request = ++listRequest;
+
+            const start = field("start").value;
+
+            const end = field("end").value;
+
+            if (start && end && start > end) {
+
+                field("list").textContent =
+
+                    "Período inválido.";
+
+                field("pageTotal").textContent = "—";
+
+                return;
+
+            }
+
+            field("list").textContent = "Carregando...";
+
+            field("pageTotal").textContent = "—";
+
+            field("previous").disabled = true;
+
+            field("next").disabled = true;
+
+            const columns = material
+
+                ? "id,service_order_id,material_name," +
+
+                  "quantity,unit,unit_cost,total_cost," +
+
+                  "paid_by,expense_date"
+
+                : "id,category,description,amount," +
+
+                  "paid_by,payment_method,expense_date";
+
+            let query = db
+
+                .from(table)
+
+                .select(columns, { count: "exact" })
+
+                .order("expense_date", {
+
+                    ascending: false
+
+                })
+
+                .order("id");
+
+            if (start) {
+
+                query = query.gte(
+
+                    "expense_date",
+
+                    start
+
+                );
+
+            }
+
+            if (end) {
+
+                query = query.lte(
+
+                    "expense_date",
+
+                    end
+
+                );
+
+            }
+
+            if (filterPartner.value) {
+
+                query = query.eq(
+
+                    "paid_by",
+
+                    filterPartner.value
+
+                );
+
+            }
+
+            const { data, error, count } = await query
+
+                .range(
+
+                    page * pageSize,
+
+                    (page + 1) * pageSize - 1
+
+                );
+
+            if (
+
+                !validSession() ||
+
+                request !== listRequest
+
+            ) return;
+
+            if (error) {
+
+                field("list").textContent =
+
+                    "Consulta indisponível para este perfil.";
+
+                return;
+
+            }
+
+            field("previous").disabled = page === 0;
+
+            field("next").disabled =
+
+                (page + 1) * pageSize >= (count ?? 0);
+
+            const total = data.reduce(
+
+                (sum, item) => sum +
+
+                    Number(
+
+                        material
+
+                            ? item.total_cost
+
+                            : item.amount
+
+                    ),
+
+                0
+
+            );
+
+            field("pageTotal").textContent =
+
+                ERP.money(total);
+
+            if (!data.length) {
+
+                field("list").textContent =
+
+                    "Nenhum gasto encontrado.";
+
+                return;
+
+            }
+
+            // Identificar clientes dos materiais.
+
+            const orderNames = new Map();
+
+            if (material) {
+
+                const ids = [
+
+                    ...new Set(
+
+                        data.map(
+
+                            item => item.service_order_id
+
+                        )
+
+                    )
+
+                ];
+
+                const result = await db
+
+                    .from("service_financial_summary")
+
+                    .select(
+
+                        "service_order_id,customer_name"
+
+                    )
+
+                    .in("service_order_id", ids);
+
+                if (
+
+                    !validSession() ||
+
+                    request !== listRequest
+
+                ) return;
+
+                if (!result.error) {
+
+                    result.data.forEach(order => {
+
+                        orderNames.set(
+
+                            order.service_order_id,
+
+                            order.customer_name
+
+                        );
+
+                    });
+
+                }
+
+            }
+
+            field("list").innerHTML = `
+
+                <table>
+
+                    <thead>
+
+                        <tr>
+
+                            <th>Data</th>
+
+                            <th>
+
+                                ${material
+
+                                    ? "Cliente"
+
+                                    : "Categoria"}
+
+                            </th>
+
+                            <th>Descrição</th>
+
+                            ${material
+
+                                ? "<th>Quantidade</th>"
+
+                                : "<th>Pagamento</th>"}
+
+                            <th>Pago por</th>
+
+                            <th>Valor</th>
+
+                        </tr>
+
+                    </thead>
+
+                    <tbody>
+
+                        ${data.map(item => `
+
+                            <tr>
+
+                                <td>
+
+                                    ${esc(ERP.formatDate(
+
+                                        item.expense_date
+
+                                    ))}
+
+                                </td>
+
+                                <td>
+
+                                    ${esc(material
+
+                                        ? orderNames.get(
+
+                                            item.service_order_id
+
+                                        ) || "Não disponível"
+
+                                        : item.category)}
+
+                                </td>
+
+                                <td>
+
+                                    ${esc(material
+
+                                        ? item.material_name
+
+                                        : item.description)}
+
+                                </td>
+
+                                <td>
+
+                                    ${esc(material
+
+                                        ? `${item.quantity} ${item.unit}`
+
+                                        : item.payment_method)}
+
+                                </td>
+
+                                <td>
+
+                                    ${esc(
+
+                                        names.get(item.paid_by)
+
+                                        || "Não identificado"
+
+                                    )}
+
+                                </td>
+
+                                <td>
+
+                                    ${esc(ERP.money(material
+
+                                        ? item.total_cost
+
+                                        : item.amount))}
+
+                                </td>
+
+                            </tr>
+
+                        `).join("")}
+
+                    </tbody>
+
+                </table>
+
+            `;
+
+        }
+
+        field("filter").addEventListener(
+
+            "click",
+
+            () => {
+
+                page = 0;
+
+                void loadList();
+
+            }
+
+        );
+
+        field("previous").addEventListener(
+
+            "click",
+
+            () => {
+
+                if (page > 0) page--;
+
+                void loadList();
+
+            }
+
+        );
+
+        field("next").addEventListener(
+
+            "click",
+
+            () => {
+
+                page++;
+
+                void loadList();
+
+            }
+
+        );
+
+        // ==================================
+        // REGISTRAR GASTO
+        // ==================================
+
+        form.addEventListener(
+
+            "submit",
+
+            async event => {
+
+                event.preventDefault();
+
+                if (saving || !validSession()) return;
+
+                const description = field("description")
+
+                    .value.trim();
+
+                const amount = Number(
+
+                    field("amount").value
+
+                );
+
+                const quantity = material
+
+                    ? Number(field("quantity").value)
+
+                    : 1;
+
+                const date = field("date").value;
+
+                const partnerId = ERP.isAdmin()
+
+                    ? partnerSelect.value
+
+                    : user.id;
+
+                const notes = field("notes")
+
+                    .value.trim() || null;
+
+                if (!description || !partnerId || !date) {
+
+                    message(
+
+                        "Preencha os campos obrigatórios.",
+
+                        "error"
+
+                    );
+
+                    return;
+
+                }
+
+                if (
+
+                    !Number.isFinite(amount) ||
+
+                    amount <= 0 ||
+
+                    !Number.isFinite(quantity) ||
+
+                    quantity <= 0 ||
+
+                    calculateTotal() <= 0
+
+                ) {
+
+                    message(
+
+                        "Confira os valores e quantidades.",
+
+                        "error"
+
+                    );
+
+                    return;
+
+                }
+
+                if (date > ERP.today()) {
+
+                    message(
+
+                        "Não é permitido registrar gastos futuros.",
+
+                        "error"
+
+                    );
+
+                    return;
+
+                }
+
+                let payload;
+
+                if (material) {
+
+                    const serviceId = field("service").value;
+
+                    if (!services.has(serviceId)) {
+
+                        message(
+
+                            "Selecione uma ordem de serviço.",
+
+                            "error"
+
+                        );
+
+                        return;
+
+                    }
+
+                    payload = {
+
+                        service_order_id: serviceId,
+
+                        material_name: description,
+
+                        quantity,
+
+                        unit: field("unit").value,
+
+                        unit_cost: amount,
+
+                        paid_by: partnerId,
+
+                        expense_date: date,
+
+                        notes
+
+                    };
+
+                } else {
+
+                    payload = {
+
+                        category: field("category").value,
+
+                        description,
+
+                        amount,
+
+                        paid_by: partnerId,
+
+                        payment_method: field("method").value,
+
+                        expense_date: date,
+
+                        notes
+
+                    };
+
+                }
+
+                const confirmed = window.confirm(
+
+                    "Confirma o registro deste gasto de " +
+
+                    ERP.money(calculateTotal()) +
+
+                    "?"
+
+                );
+
+                if (!confirmed) return;
+
+                const button = field("save");
+
+                saving = true;
+
+                button.disabled = true;
+
+                button.textContent = "Registrando...";
+
+                try {
+
+                    const { error } = await db
+
+                        .from(table)
+
+                        .insert(payload);
+
+                    if (!validSession()) return;
+
+                    if (error) {
+
+                        message(
+
+                            "Gasto não registrado. Confira os dados, permissões e fechamento de caixa.",
+
+                            "error"
+
+                        );
+
+                        return;
+
+                    }
+
+                    form.reset();
+
+                    field("date").value = ERP.today();
+
+                    if (!ERP.isAdmin()) {
+
+                        partnerSelect.value = user.id;
+
+                    }
+
+                    calculateTotal();
+
+                    message(
+
+                        "Gasto registrado com sucesso!",
+
+                        "success"
+
+                    );
+
+                    page = 0;
+
+                    await loadList();
+
+                } catch (_) {
+
+                    message(
+
+                        "Falha de conexão. Confira os registros antes de repetir.",
+
+                        "error"
+
+                    );
+
+                } finally {
+
+                    saving = false;
+
+                    if (validSession()) {
+
+                        button.disabled = false;
+
+                        button.textContent =
+
+                            "Registrar gasto";
+
+                    }
+
+                }
+
+            }
+
+        );
+
+        await Promise.all([
+
+            loadList(),
+
+            material
+
+                ? searchServices()
+
+                : Promise.resolve()
+
+        ]);
+
+    }
+
+    // ======================================
+    // REGISTRAR MODULOS
+    // ======================================
+
+    ERP.registerModule(
+
+        "materiais",
+
+        () => loadCosts("material")
+
+    );
+
+    ERP.registerModule(
+
+        "despesas",
+
+        () => loadCosts("expense")
+
+    );
+
+})();
+
