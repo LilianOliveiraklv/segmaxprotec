@@ -221,25 +221,59 @@ $("#loginOpen").onclick = () =>
 $("#closeAuth").onclick = () =>
   $("#authPanel").classList.add("hidden");
 
+
+// LOGIN COM TELEFONE OU E-MAIL
+
+const loginInput = $("#loginForm input[name=email]");
+
+loginInput.type = "text";
+loginInput.placeholder = "Telefone ou e-mail";
+loginInput.autocomplete = "username";
+
+loginInput.closest("label").firstChild.textContent =
+  "Telefone ou e-mail";
+
 $("#loginForm").onsubmit = async e => {
   e.preventDefault();
 
   const f = new FormData(e.currentTarget);
+  let login = f.get("email").trim().toLowerCase();
+
+  if (!login.includes("@")) {
+    let phone = login.replace(/\D/g, "");
+
+    if (phone.length === 11) {
+      phone = "55" + phone;
+    }
+
+    if (!/^55\d{11}$/.test(phone)) {
+      msg($("#loginMessage"),
+        "Informe um celular válido com DDD.",
+        "error");
+      return;
+    }
+
+    login = phone + "@tecnicos.segmaxprotec.com.br";
+  }
 
   const {error} = await db.auth.signInWithPassword({
-    email:f.get("email").trim(),
+    email:login,
     password:f.get("password")
   });
 
   if (error) {
     msg($("#loginMessage"),
-      "E-mail ou senha inválidos.","error");
+      "Telefone, e-mail ou senha inválidos.",
+      "error");
     return;
   }
 
   $("#loginForm").reset();
+  $("#loginMessage").textContent = "";
+
   await showDashboard();
 };
+
 
 // TROCA SEGURA DE SENHA
 
