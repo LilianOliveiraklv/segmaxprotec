@@ -1,6 +1,6 @@
 // Configure com a URL e a chave anon/public do projeto Supabase.
-const SUPABASE_URL = "COLE_A_URL_DO_SUPABASE";
-const SUPABASE_ANON_KEY = "COLE_A_CHAVE_ANON_PUBLICA";
+const SUPABASE_URL = "https://zmmgvptazjjtcydltnvf.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_cGXbORnLTBKcDTAyX11Lcg_YtVaMWZ1";
 const sbReady = SUPABASE_URL.startsWith("https://") && !SUPABASE_ANON_KEY.startsWith("COLE_");
 const db = sbReady ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
 const $ = s => document.querySelector(s);
