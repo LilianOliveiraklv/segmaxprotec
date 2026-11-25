@@ -1489,6 +1489,7 @@
             anchor.append(card);
 
             if (!admin) return;
+            renderServiceIntegration(item, card);
 
             const actions = card.querySelector(".actions");
 
@@ -1507,6 +1508,770 @@
         // ==================================
         // EXECUTAR ALTERACOES
         // ==================================
+
+        // ==========================================
+// SEGMAX PROTEC
+// INTEGRACAO AGENDA, CRM E ORDEM DE SERVICO
+// ==========================================
+
+async function renderServiceIntegration(item, card) {
+
+    if (!ERP.isAdmin()) return;
+
+    if (["Cancelado", "Recusado"].includes(item.status)) {
+        return;
+    }
+
+    const panel = document.createElement("div");
+
+    panel.className = "form-card";
+
+    card.append(panel);
+
+    function active() {
+
+        return validSession()
+            && panel.isConnected
+            && ERP.isAdmin();
+
+    }
+
+    function feedback(text, type = "") {
+
+        if (!active()) return;
+
+        const element = panel.querySelector(
+            "[data-feedback]"
+        );
+
+        if (!element) return;
+
+        element.textContent = text;
+
+        element.className = type
+            ? `message-${type}`
+            : "";
+
+    }
+
+    // ======================================
+    // VINCULAR CLIENTE AO CRM
+    // ======================================
+
+    if (!item.customer_id) {
+
+        panel.innerHTML = `
+
+            <h4>Vincular cliente ao CRM</h4>
+
+            <p>
+                Este agendamento ainda não possui
+                um cliente vinculado.
+            </p>
+
+            <label>Pesquisar cliente</label>
+
+            <input
+                data-customer-search
+                type="search"
+                placeholder="Nome do cliente">
+
+            <button
+                type="button"
+                data-search
+                class="btn-secondary">
+
+                Pesquisar
+
+            </button>
+
+            <label>Cliente cadastrado</label>
+
+            <select data-customer>
+
+                <option value="">
+                    Selecione o cliente
+                </option>
+
+            </select>
+
+            <div class="actions">
+
+                <button
+                    type="button"
+                    data-link
+                    class="btn-primary"
+                    disabled>
+
+                    Vincular ao CRM
+
+                </button>
+
+                <button
+                    type="button"
+                    data-register
+                    class="btn-secondary">
+
+                    Abrir cadastro de clientes
+
+                </button>
+
+            </div>
+
+            <p data-feedback role="status"></p>
+
+        `;
+
+        const search = panel.querySelector(
+            "[data-customer-search]"
+        );
+
+        const select = panel.querySelector(
+            "[data-customer]"
+        );
+
+        const link = panel.querySelector(
+            "[data-link]"
+        );
+
+        const searchButton = panel.querySelector(
+            "[data-search]"
+        );
+
+        let searchRequest = 0;
+
+        let linking = false;
+
+        search.value = item.client_name || "";
+
+        async function searchCustomers() {
+
+            if (!active() || linking) return;
+
+            const request = ++searchRequest;
+
+            link.disabled = true;
+
+            select.disabled = true;
+
+            select.replaceChildren(
+                new Option("Pesquisando...", "")
+            );
+
+            let query = db
+
+                .from("customers")
+
+                .select(
+                    "id,full_name,phone,city,captured_by"
+                )
+
+                .eq("active", true)
+
+                .order("full_name")
+
+                .limit(50);
+
+            const term = search.value.trim();
+
+            if (term) {
+
+                query = query.ilike(
+                    "full_name",
+                    `%${term}%`
+                );
+
+            }
+
+            const { data, error } = await query;
+
+            if (
+                !active() ||
+                request !== searchRequest
+            ) return;
+
+            select.replaceChildren(
+
+                new Option(
+                    "Selecione o cliente",
+                    ""
+                )
+
+            );
+
+            if (error) {
+
+                feedback(
+                    "Não foi possível consultar clientes.",
+                    "error"
+                );
+
+                return;
+
+            }
+
+            (data || []).forEach(customer => {
+
+                const captador =
+                    names.get(customer.captured_by)
+                    || "Não identificado";
+
+                select.append(
+
+                    new Option(
+
+                        `${customer.full_name} | ` +
+                        `${customer.phone || ""} | ` +
+                        `${customer.city || ""} | ` +
+                        `Captador: ${captador}`,
+
+                        customer.id
+
+                    )
+
+                );
+
+            });
+
+            select.disabled = false;
+
+            feedback(
+
+                data?.length
+
+                    ? `${data.length} cliente(s) encontrado(s).`
+
+                    : "Nenhum cliente encontrado. Verifique o nome ou faça o cadastro."
+
+            );
+
+        }
+
+        select.onchange = () => {
+
+            link.disabled =
+                !select.value || linking;
+
+        };
+
+        searchButton.onclick = searchCustomers;
+
+        panel.querySelector(
+            "[data-register]"
+        ).onclick = () => {
+
+            if (!linking) {
+                ERP.openModule("clientes");
+            }
+
+        };
+
+        link.onclick = async () => {
+
+            if (
+                !active() ||
+                !select.value ||
+                linking
+            ) return;
+
+            if (!window.confirm(
+
+                "Confirma que este é o cliente correto?"
+
+            )) return;
+
+            linking = true;
+
+            link.disabled = true;
+
+            select.disabled = true;
+
+            searchButton.disabled = true;
+
+            feedback("Vinculando cliente...");
+
+            try {
+
+                const { data, error } = await db.rpc(
+
+                    "link_appointment_customer",
+
+                    {
+
+                        p_appointment_id: item.id,
+
+                        p_customer_id: select.value
+
+                    }
+
+                );
+
+                if (!active()) return;
+
+                if (error || data !== true) {
+
+                    feedback(
+                        "Não foi possível vincular o cliente.",
+                        "error"
+                    );
+
+                    return;
+
+                }
+
+                ERP.notify(
+                    "Cliente vinculado com sucesso!",
+                    "success"
+                );
+
+                await loadList();
+
+            } catch (_) {
+
+                feedback(
+                    "Falha na conexão. Consulte a agenda novamente.",
+                    "error"
+                );
+
+            } finally {
+
+                linking = false;
+
+                if (active()) {
+
+                    select.disabled = false;
+
+                    searchButton.disabled = false;
+
+                    link.disabled = !select.value;
+
+                }
+
+            }
+
+        };
+
+        await searchCustomers();
+
+        return;
+
+    }
+
+    // ======================================
+    // CONSULTAR ORDEM DE SERVICO EXISTENTE
+    // ======================================
+
+    panel.textContent =
+        "Consultando ordem de serviço...";
+
+    const [customerResult, orderResult] =
+        await Promise.all([
+
+            db.from("customers")
+
+                .select("full_name,captured_by,active")
+
+                .eq("id", item.customer_id)
+
+                .maybeSingle(),
+
+            db.from("service_orders")
+
+                .select("id,status")
+
+                .eq("appointment_id", item.id)
+
+                .maybeSingle()
+
+        ]);
+
+    if (!active()) return;
+
+    if (
+        customerResult.error ||
+        orderResult.error ||
+        !customerResult.data
+    ) {
+
+        panel.textContent =
+            "Não foi possível consultar o vínculo.";
+
+        return;
+
+    }
+
+    const customer = customerResult.data;
+
+    const order = orderResult.data;
+
+    const captador =
+        names.get(customer.captured_by)
+        || "Não identificado";
+
+    // ======================================
+    // ORDEM JA EXISTENTE
+    // ======================================
+
+    if (order) {
+
+        panel.innerHTML = `
+
+            <h4>Ordem de serviço vinculada</h4>
+
+            <p>
+                <strong>Cliente:</strong>
+                ${esc(customer.full_name)}
+            </p>
+
+            <p>
+                <strong>Captador:</strong>
+                ${esc(captador)}
+            </p>
+
+            <p>
+                <strong>Situação da OS:</strong>
+                ${esc(order.status)}
+            </p>
+
+            <div class="actions">
+
+                <button
+                    data-open-service
+                    class="btn-secondary">
+
+                    Consultar serviços
+
+                </button>
+
+                <button
+                    data-open-payment
+                    class="btn-primary">
+
+                    Abrir pagamentos
+
+                </button>
+
+            </div>
+
+        `;
+
+        panel.querySelector(
+            "[data-open-service]"
+        ).onclick = () => {
+
+            ERP.openModule("servicos");
+
+        };
+
+        panel.querySelector(
+            "[data-open-payment]"
+        ).onclick = () => {
+
+            ERP.openModule("pagamentos");
+
+        };
+
+        return;
+
+    }
+
+    // ======================================
+    // VALIDAR DISPONIBILIDADE
+    // ======================================
+
+    if (
+
+        !customer.active ||
+
+        !item.technician_id ||
+
+        ![
+            "Agendado",
+            "Em andamento",
+            "Concluído"
+        ].includes(item.status)
+
+    ) {
+
+        panel.innerHTML = `
+
+            <h4>Cliente vinculado ao CRM</h4>
+
+            <p>${esc(customer.full_name)}</p>
+
+            <p>Captador: ${esc(captador)}</p>
+
+            <p>
+                A ordem de serviço poderá ser gerada
+                após a confirmação do atendimento,
+                desde que o cliente esteja ativo.
+            </p>
+
+        `;
+
+        return;
+
+    }
+
+    // ======================================
+    // FORMULARIO DA ORDEM DE SERVICO
+    // ======================================
+
+    panel.innerHTML = `
+
+        <h4>Gerar ordem de serviço</h4>
+
+        <p>
+            <strong>Cliente:</strong>
+            ${esc(customer.full_name)}
+        </p>
+
+        <p>
+            <strong>Captador:</strong>
+            ${esc(captador)}
+        </p>
+
+        <p>
+            <strong>Executor:</strong>
+            ${esc(
+                names.get(item.technician_id)
+                || "Não identificado"
+            )}
+        </p>
+
+        <form data-order-form>
+
+            <label>Descrição do serviço</label>
+
+            <textarea
+                data-description
+                required></textarea>
+
+            <label>Valor do serviço (R$)</label>
+
+            <input
+                data-amount
+                type="number"
+                min="0"
+                step="0.01"
+                required>
+
+            <label>Desconto (R$)</label>
+
+            <input
+                data-discount
+                type="number"
+                min="0"
+                step="0.01"
+                value="0"
+                required>
+
+            <label>Previsão do próximo pagamento</label>
+
+            <input
+                data-next-payment
+                type="date">
+
+            <p>
+
+                <strong>Valor final:</strong>
+
+                <span data-total>R$ 0,00</span>
+
+            </p>
+
+            <button
+                data-save-order
+                class="btn-primary"
+                type="submit">
+
+                Gerar ordem de serviço
+
+            </button>
+
+        </form>
+
+        <p data-feedback role="status"></p>
+
+    `;
+
+    const form = panel.querySelector(
+        "[data-order-form]"
+    );
+
+    const description = panel.querySelector(
+        "[data-description]"
+    );
+
+    const amount = panel.querySelector(
+        "[data-amount]"
+    );
+
+    const discount = panel.querySelector(
+        "[data-discount]"
+    );
+
+    const nextPayment = panel.querySelector(
+        "[data-next-payment]"
+    );
+
+    const total = panel.querySelector(
+        "[data-total]"
+    );
+
+    const save = panel.querySelector(
+        "[data-save-order]"
+    );
+
+    description.value = item.service || "";
+
+    nextPayment.min = localDate(item.starts_at);
+
+    let saving = false;
+
+    function calculate() {
+
+        const value = Number(amount.value);
+
+        const deduction = Number(discount.value);
+
+        total.textContent = ERP.money(
+
+            Math.max(0, value - deduction)
+
+        );
+
+        save.disabled =
+
+            saving ||
+
+            amount.value === "" ||
+
+            !Number.isFinite(value) ||
+
+            !Number.isFinite(deduction) ||
+
+            value < 0 ||
+
+            deduction < 0 ||
+
+            deduction > value;
+
+    }
+
+    amount.oninput = calculate;
+
+    discount.oninput = calculate;
+
+    calculate();
+
+    form.onsubmit = async event => {
+
+        event.preventDefault();
+
+        if (
+            !active() ||
+            saving ||
+            save.disabled
+        ) return;
+
+        if (!description.value.trim()) {
+
+            feedback(
+                "Informe a descrição do serviço.",
+                "error"
+            );
+
+            return;
+
+        }
+
+        if (!window.confirm(
+
+            "Confirma a criação desta ordem de serviço?"
+
+        )) return;
+
+        saving = true;
+
+        save.disabled = true;
+
+        feedback("Gerando ordem de serviço...");
+
+        try {
+
+            const { data, error } = await db.rpc(
+
+                "create_service_order_from_appointment",
+
+                {
+
+                    p_appointment_id: item.id,
+
+                    p_description:
+                        description.value.trim(),
+
+                    p_total_amount:
+                        Number(amount.value),
+
+                    p_discount:
+                        Number(discount.value),
+
+                    p_next_payment_date:
+                        nextPayment.value || null
+
+                }
+
+            );
+
+            if (!active()) return;
+
+            if (error || !data) {
+
+                feedback(
+
+                    "Não foi possível gerar a ordem. " +
+                    "Verifique os dados e consulte a agenda.",
+
+                    "error"
+
+                );
+
+                return;
+
+            }
+
+            ERP.notify(
+
+                "Ordem de serviço gerada com sucesso!",
+
+                "success"
+
+            );
+
+            await loadList();
+
+        } catch (_) {
+
+            feedback(
+
+                "Falha na conexão. Consulte a agenda antes de repetir.",
+
+                "error"
+
+            );
+
+        } finally {
+
+            saving = false;
+
+            if (active()) calculate();
+
+        }
+
+    };
+
+}
 
         async function execute(operation, success) {
 
