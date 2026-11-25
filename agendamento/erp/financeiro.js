@@ -3952,3 +3952,1261 @@
 
 })();
 
+
+
+
+// ==========================================
+// SEGMAX PROTEC - ERP 2.0
+// MODULO FINANCEIRO - PARTE 4
+// FECHAMENTO DE CAIXA E DIVISAO DE LUCROS
+// ==========================================
+
+"use strict";
+
+(() => {
+
+    const ERP = window.SEGMAX;
+
+    if (!ERP) return;
+
+    const db = ERP.db;
+
+    const esc = ERP.escapeHTML;
+
+    // ======================================
+    // CARREGAR MODULO DE CAIXA
+    // ======================================
+
+    async function loadCaixa() {
+
+        const version = ERP.getSessionVersion();
+
+        const user = ERP.getUser();
+
+        if (!user) return;
+
+        const container = document.querySelector(
+            "#caixaContent"
+        );
+
+        if (!container) return;
+
+        container.innerHTML = `
+
+            <div class="content-card">
+
+                <h2>Fechamento diário de caixa</h2>
+
+                <p class="muted">
+
+                    Confira os recebimentos, custos e
+                    despesas antes de fechar o caixa.
+
+                </p>
+
+                <div class="filters">
+
+                    <div>
+
+                        <label for="cashDate">
+                            Data do movimento
+                        </label>
+
+                        <input
+                            id="cashDate"
+                            type="date"
+                            required>
+
+                    </div>
+
+                    <button
+                        id="cashSearch"
+                        class="btn-secondary">
+
+                        Consultar caixa
+
+                    </button>
+
+                </div>
+
+                <div
+                    id="cashMessage"
+                    role="status"
+                    aria-live="polite">
+                </div>
+
+            </div>
+
+            <div id="cashSummary"></div>
+
+            <div id="cashPartners"></div>
+
+            <div id="cashTransfer"></div>
+
+            <div
+                id="cashActions"
+                class="content-card"
+                hidden>
+
+                <h2>Operações de caixa</h2>
+
+                <div class="actions">
+
+                    <button
+                        id="closeCash"
+                        class="btn-primary"
+                        hidden>
+
+                        Fechar caixa
+
+                    </button>
+
+                    <button
+                        id="confirmTransfer"
+                        class="btn-success"
+                        hidden>
+
+                        Confirmar transferência recebida
+
+                    </button>
+
+                    <button
+                        id="reopenCash"
+                        class="btn-secondary"
+                        hidden>
+
+                        Reabrir caixa
+
+                    </button>
+
+                </div>
+
+                <div id="reopenArea" hidden>
+
+                    <form id="reopenForm">
+
+                        <label for="reopenReason">
+
+                            Motivo da reabertura *
+
+                        </label>
+
+                        <textarea
+                            id="reopenReason"
+                            minlength="5"
+                            maxlength="500"
+                            required>
+                        </textarea>
+
+                        <button
+                            type="submit"
+                            id="confirmReopen"
+                            class="btn-primary">
+
+                            Confirmar reabertura
+
+                        </button>
+
+                        <button
+                            type="button"
+                            id="cancelReopen"
+                            class="btn-secondary">
+
+                            Cancelar
+
+                        </button>
+
+                    </form>
+
+                </div>
+
+            </div>
+
+        `;
+
+        const $ = selector =>
+            container.querySelector(selector);
+
+        const dateInput = $("#cashDate");
+
+        const anchor = $("#cashSummary");
+
+        const closeButton = $("#closeCash");
+
+        const transferButton = $("#confirmTransfer");
+
+        const reopenButton = $("#reopenCash");
+
+        let current = null;
+
+        let busy = false;
+
+        let requestId = 0;
+
+        const names = new Map();
+
+        dateInput.value = ERP.today();
+
+        dateInput.max = ERP.today();
+
+        function validSession() {
+
+            return (
+
+                version === ERP.getSessionVersion() &&
+
+                anchor.isConnected
+
+            );
+
+        }
+
+        function message(text, type = "") {
+
+            if (!validSession()) return;
+
+            const element = $("#cashMessage");
+
+            element.textContent = text;
+
+            element.className = type
+
+                ? `message-${type}`
+
+                : "";
+
+        }
+
+        function money(value) {
+
+            if (
+
+                value === null ||
+
+                value === undefined ||
+
+                !Number.isFinite(Number(value))
+
+            ) {
+
+                return "—";
+
+            }
+
+            return ERP.money(Number(value));
+
+        }
+
+        // ==================================
+        // IDENTIFICAR SOCIOS
+        // ==================================
+
+        const partnerResult = await db
+
+            .from("technicians")
+
+            .select("user_id,full_name");
+
+        if (!validSession()) return;
+
+        if (!partnerResult.error) {
+
+            partnerResult.data.forEach(partner => {
+
+                names.set(
+
+                    partner.user_id,
+
+                    partner.full_name
+
+                );
+
+            });
+
+        }
+
+        function partnerName(id) {
+
+            return names.get(id) ||
+
+                "Não identificado";
+
+        }
+
+        // ==================================
+        // LIMPAR PAINEL
+        // ==================================
+
+        function clearPanel() {
+
+            current = null;
+
+            $("#cashSummary").replaceChildren();
+
+            $("#cashPartners").replaceChildren();
+
+            $("#cashTransfer").replaceChildren();
+
+            $("#cashActions").hidden = true;
+
+            $("#reopenArea").hidden = true;
+
+            closeButton.hidden = true;
+
+            transferButton.hidden = true;
+
+            reopenButton.hidden = true;
+
+        }
+
+        // ==================================
+        // CONSULTAR CAIXA
+        // ==================================
+
+        async function loadSummary() {
+
+            if (!validSession() || busy) return;
+
+            const date = dateInput.value;
+
+            clearPanel();
+
+            if (!date || date > ERP.today()) {
+
+                message(
+
+                    "Selecione uma data válida.",
+
+                    "error"
+
+                );
+
+                return;
+
+            }
+
+            const request = ++requestId;
+
+            anchor.textContent = "Consultando caixa...";
+
+            try {
+
+                const [summary, closing] =
+
+                    await Promise.all([
+
+                        db.rpc(
+
+                            "get_daily_financial_summary",
+
+                            {
+
+                                p_date: date
+
+                            }
+
+                        ),
+
+                        db.from("cash_closings")
+
+                            .select(
+
+                                "id,closing_date,status," +
+
+                                "transfer_amount," +
+
+                                "transfer_from,transfer_to," +
+
+                                "settlement_confirmed," +
+
+                                "settlement_confirmed_at"
+
+                            )
+
+                            .eq("closing_date", date)
+
+                            .maybeSingle()
+
+                    ]);
+
+                if (
+
+                    !validSession() ||
+
+                    request !== requestId ||
+
+                    dateInput.value !== date
+
+                ) return;
+
+                if (
+
+                    summary.error ||
+
+                    closing.error ||
+
+                    !summary.data ||
+
+                    typeof summary.data !== "object" ||
+
+                    Array.isArray(summary.data)
+
+                ) {
+
+                    clearPanel();
+
+                    message(
+
+                        "Não foi possível consultar o caixa.",
+
+                        "error"
+
+                    );
+
+                    return;
+
+                }
+
+                const data = summary.data;
+
+                const record = closing.data;
+
+                const closed =
+
+                    record?.status === "Fechado";
+
+                const status = record?.status ||
+
+                    data.status ||
+
+                    "Aberto";
+
+                current = {
+
+                    date,
+
+                    data,
+
+                    record,
+
+                    closed,
+
+                    status
+
+                };
+
+                renderSummary(current);
+
+            } catch (_) {
+
+                if (!validSession()) return;
+
+                clearPanel();
+
+                message(
+
+                    "Falha na consulta financeira.",
+
+                    "error"
+
+                );
+
+            }
+
+        }
+
+        // ==================================
+        // RESUMO FINANCEIRO
+        // ==================================
+
+        function renderSummary(state) {
+
+            const data = state.data;
+
+            const record = state.record;
+
+            const balance = Number(
+
+                data.company_balance
+
+            );
+
+            const cards = [
+
+                [
+
+                    "Recebimentos líquidos",
+
+                    data.total_received
+
+                ],
+
+                [
+
+                    "Materiais",
+
+                    data.total_materials
+
+                ],
+
+                [
+
+                    "Despesas operacionais",
+
+                    data.total_expenses
+
+                ],
+
+                [
+
+                    "Saldo da empresa",
+
+                    data.company_balance
+
+                ]
+
+            ];
+
+            anchor.innerHTML = `
+
+                <div class="content-card">
+
+                    <h2>
+
+                        Resumo de
+
+                        ${esc(ERP.formatDate(state.date))}
+
+                    </h2>
+
+                    <p>
+
+                        Situação:
+
+                        <strong>
+
+                            ${esc(state.status)}
+
+                        </strong>
+
+                    </p>
+
+                    <div class="dashboard-grid">
+
+                        ${cards.map(item => `
+
+                            <div class="stat-card">
+
+                                <span>
+
+                                    ${esc(item[0])}
+
+                                </span>
+
+                                <strong>
+
+                                    ${esc(money(item[1]))}
+
+                                </strong>
+
+                            </div>
+
+                        `).join("")}
+
+                    </div>
+
+                </div>
+
+            `;
+
+            // ==============================
+            // RESULTADO POR SOCIO
+            // ==============================
+
+            $("#cashPartners").innerHTML = `
+
+                <div class="table-card">
+
+                    <h2>Distribuição entre sócios</h2>
+
+                    <div class="table-wrapper">
+
+                        <table>
+
+                            <thead>
+
+                                <tr>
+
+                                    <th>Sócio</th>
+
+                                    <th>Saldo individual</th>
+
+                                    <th>Participação no resultado</th>
+
+                                </tr>
+
+                            </thead>
+
+                            <tbody>
+
+                                <tr>
+
+                                    <td>Vinícius</td>
+
+                                    <td>
+
+                                        ${esc(money(
+
+                                            data.vinicius_balance
+
+                                        ))}
+
+                                    </td>
+
+                                    <td>
+
+                                        ${esc(money(
+
+                                            data.vinicius_share
+
+                                        ))}
+
+                                    </td>
+
+                                </tr>
+
+                                <tr>
+
+                                    <td>Breno</td>
+
+                                    <td>
+
+                                        ${esc(money(
+
+                                            data.breno_balance
+
+                                        ))}
+
+                                    </td>
+
+                                    <td>
+
+                                        ${esc(money(
+
+                                            data.breno_share
+
+                                        ))}
+
+                                    </td>
+
+                                </tr>
+
+                            </tbody>
+
+                        </table>
+
+                    </div>
+
+                </div>
+
+            `;
+
+            // ==============================
+            // TRANSFERENCIA ENTRE SOCIOS
+            // ==============================
+
+            const transferAmount = Number(
+
+                state.closed
+
+                    ? record.transfer_amount
+
+                    : data.transfer_amount
+
+            );
+
+            const confirmed =
+
+                record?.settlement_confirmed === true;
+
+            const transferKnown =
+
+                Number.isFinite(transferAmount) &&
+
+                transferAmount >= 0;
+
+            const hasTransfer =
+
+                transferKnown && transferAmount > 0;
+
+            const from = record?.transfer_from;
+
+            const to = record?.transfer_to;
+
+            let transferText;
+
+            if (!transferKnown) {
+
+                transferText =
+
+                    "Valor de transferência indisponível.";
+
+            } else if (!hasTransfer) {
+
+                transferText =
+
+                    "Nenhuma transferência necessária.";
+
+            } else if (!state.closed) {
+
+                transferText =
+
+                    "Valor previsto. A direção da transferência será confirmada no fechamento.";
+
+            } else if (confirmed) {
+
+                transferText =
+
+                    "Transferência recebida e confirmada.";
+
+            } else {
+
+                transferText =
+
+                    "Aguardando confirmação do recebimento.";
+
+            }
+
+            $("#cashTransfer").innerHTML = `
+
+                <div class="content-card">
+
+                    <h2>Acerto financeiro</h2>
+
+                    <div class="stat-card">
+
+                        <span>Valor da transferência</span>
+
+                        <strong>
+
+                            ${esc(money(
+
+                                transferKnown
+
+                                    ? transferAmount
+
+                                    : null
+
+                            ))}
+
+                        </strong>
+
+                    </div>
+
+                    ${state.closed && hasTransfer ? `
+
+                        <p>
+
+                            <strong>Quem deve pagar:</strong>
+
+                            ${esc(partnerName(from))}
+
+                        </p>
+
+                        <p>
+
+                            <strong>Quem deve receber:</strong>
+
+                            ${esc(partnerName(to))}
+
+                        </p>
+
+                    ` : ""}
+
+                    <p>
+
+                        ${esc(transferText)}
+
+                    </p>
+
+                </div>
+
+            `;
+
+            // ==============================
+            // PERMISSOES DE INTERFACE
+            // ==============================
+
+            const admin = ERP.isAdmin();
+
+            const knownBalance =
+
+                data.company_balance !== null &&
+
+                data.company_balance !== undefined &&
+
+                Number.isFinite(balance);
+
+            const canClose =
+
+                !state.closed &&
+
+                knownBalance &&
+
+                balance >= 0 &&
+
+                (!record || admin);
+
+            const canConfirm =
+
+                state.closed &&
+
+                hasTransfer &&
+
+                !confirmed &&
+
+                (admin || to === user.id);
+
+            const canReopen =
+
+                admin &&
+
+                state.closed &&
+
+                !(hasTransfer && confirmed);
+
+            closeButton.hidden = !canClose;
+
+            transferButton.hidden = !canConfirm;
+
+            reopenButton.hidden = !canReopen;
+
+            $("#cashActions").hidden =
+
+                !(canClose || canConfirm || canReopen);
+
+            if (knownBalance && balance < 0) {
+
+                message(
+
+                    "Caixa com saldo negativo. Confira os lançamentos antes de fechar.",
+
+                    "warning"
+
+                );
+
+            }
+
+        }
+
+        // ==================================
+        // EXECUTAR OPERACOES FINANCEIRAS
+        // ==================================
+
+        async function executeAction(
+
+            functionName,
+
+            parameters,
+
+            successMessage,
+
+            expectBoolean = false
+
+        ) {
+
+            if (
+
+                busy ||
+
+                !current ||
+
+                !validSession() ||
+
+                current.date !== dateInput.value
+
+            ) return;
+
+            busy = true;
+
+            const controls = [
+
+                dateInput,
+
+                $("#cashSearch"),
+
+                closeButton,
+
+                transferButton,
+
+                reopenButton,
+
+                $("#confirmReopen"),
+
+                $("#cancelReopen")
+
+            ];
+
+            controls.forEach(element => {
+
+                element.disabled = true;
+
+            });
+
+            message("Processando operação...");
+
+            try {
+
+                const { data, error } = await db.rpc(
+
+                    functionName,
+
+                    parameters
+
+                );
+
+                if (!validSession()) return;
+
+                if (
+
+                    error ||
+
+                    (expectBoolean
+
+                        ? data !== true
+
+                        : !data)
+
+                ) {
+
+                    message(
+
+                        "Operação não concluída. Confira as permissões e a situação do caixa.",
+
+                        "error"
+
+                    );
+
+                    return;
+
+                }
+
+                message(
+
+                    successMessage,
+
+                    "success"
+
+                );
+
+            } catch (_) {
+
+                message(
+
+                    "Falha de conexão. Consulte a situação do caixa antes de repetir.",
+
+                    "error"
+
+                );
+
+            } finally {
+
+                busy = false;
+
+                if (validSession()) {
+
+                    controls.forEach(element => {
+
+                        element.disabled = false;
+
+                    });
+
+                    await loadSummary();
+
+                }
+
+            }
+
+        }
+
+        // ==================================
+        // FECHAR CAIXA
+        // ==================================
+
+        closeButton.addEventListener(
+
+            "click",
+
+            async () => {
+
+                if (
+
+                    busy ||
+
+                    !current ||
+
+                    current.closed ||
+
+                    current.date !== dateInput.value
+
+                ) return;
+
+                const confirmed = window.confirm(
+
+                    "Confirma o fechamento do caixa de " +
+
+                    ERP.formatDate(current.date) +
+
+                    "? Confira todos os lançamentos antes de continuar."
+
+                );
+
+                if (!confirmed) return;
+
+                await executeAction(
+
+                    "close_daily_cash",
+
+                    {
+
+                        p_date: current.date
+
+                    },
+
+                    "Caixa fechado com sucesso!"
+
+                );
+
+            }
+
+        );
+
+        // ==================================
+        // CONFIRMAR TRANSFERENCIA
+        // ==================================
+
+        transferButton.addEventListener(
+
+            "click",
+
+            async () => {
+
+                if (
+
+                    busy ||
+
+                    !current?.closed ||
+
+                    !current.record ||
+
+                    current.record.settlement_confirmed
+
+                ) return;
+
+                const record = current.record;
+
+                if (
+
+                    !ERP.isAdmin() &&
+
+                    record.transfer_to !== user.id
+
+                ) return;
+
+                const confirmed = window.confirm(
+
+                    "Confirma que a transferência de " +
+
+                    money(record.transfer_amount) +
+
+                    " foi efetivamente recebida?"
+
+                );
+
+                if (!confirmed) return;
+
+                await executeAction(
+
+                    "confirm_partner_settlement",
+
+                    {
+
+                        p_closing_id: record.id
+
+                    },
+
+                    "Transferência confirmada com sucesso!",
+
+                    true
+
+                );
+
+            }
+
+        );
+
+        // ==================================
+        // REABRIR CAIXA - ADMINISTRADOR
+        // ==================================
+
+        reopenButton.addEventListener(
+
+            "click",
+
+            () => {
+
+                if (
+
+                    busy ||
+
+                    !ERP.isAdmin() ||
+
+                    !current?.closed
+
+                ) return;
+
+                $("#reopenReason").value = "";
+
+                $("#reopenArea").hidden = false;
+
+            }
+
+        );
+
+        $("#cancelReopen").addEventListener(
+
+            "click",
+
+            () => {
+
+                if (busy) return;
+
+                $("#reopenArea").hidden = true;
+
+            }
+
+        );
+
+        $("#reopenForm").addEventListener(
+
+            "submit",
+
+            async event => {
+
+                event.preventDefault();
+
+                if (
+
+                    busy ||
+
+                    !ERP.isAdmin() ||
+
+                    !current?.closed ||
+
+                    !current.record
+
+                ) return;
+
+                const reason = $("#reopenReason")
+
+                    .value.trim();
+
+                if (reason.length < 5) {
+
+                    message(
+
+                        "Informe o motivo da reabertura.",
+
+                        "error"
+
+                    );
+
+                    return;
+
+                }
+
+                const confirmed = window.confirm(
+
+                    "Confirma a reabertura deste caixa?"
+
+                );
+
+                if (!confirmed) return;
+
+                await executeAction(
+
+                    "reopen_daily_cash",
+
+                    {
+
+                        p_closing_id: current.record.id,
+
+                        p_reason: reason
+
+                    },
+
+                    "Caixa reaberto com sucesso!",
+
+                    true
+
+                );
+
+            }
+
+        );
+
+        // ==================================
+        // EVENTOS DE CONSULTA
+        // ==================================
+
+        dateInput.addEventListener(
+
+            "change",
+
+            () => {
+
+                requestId++;
+
+                clearPanel();
+
+                message(
+
+                    "Clique em Consultar caixa."
+
+                );
+
+            }
+
+        );
+
+        $("#cashSearch").addEventListener(
+
+            "click",
+
+            () => {
+
+                message("");
+
+                void loadSummary();
+
+            }
+
+        );
+
+        await loadSummary();
+
+    }
+
+    // ======================================
+    // REGISTRAR MODULO
+    // ======================================
+
+    ERP.registerModule(
+
+        "caixa",
+
+        loadCaixa
+
+    );
+
+})();
