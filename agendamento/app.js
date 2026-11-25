@@ -1,91 +1,678 @@
-// Configure com a URL e a chave anon/public do projeto Supabase.
+
+// SEGMAX PROTEC - Sistema de agendamento
 const SUPABASE_URL = "https://zmmgvptazjjtcydltnvf.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_cGXbORnLTBKcDTAyX11Lcg_YtVaMWZ1";
-const sbReady = SUPABASE_URL.startsWith("https://") && !SUPABASE_ANON_KEY.startsWith("COLE_");
-const db = sbReady ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+
+const ADMIN_ID = "0bc09a34-009c-462b-ad69-32b45e8b00fb";
+const db = window.supabase.createClient(
+  SUPABASE_URL, SUPABASE_ANON_KEY
+);
+
 const $ = s => document.querySelector(s);
-const cityList = ["Santa Luzia","Belo Horizonte","Sabará","Caeté","Vespasiano","São José da Lapa","Lagoa Santa","Confins","Pedro Leopoldo","Matozinhos","Capim Branco","Prudente de Morais","Sete Lagoas","Ribeirão das Neves","Esmeraldas","Contagem","Betim","Igarapé","São Joaquim de Bicas","Mateus Leme","Juatuba","Florestal","Jaboticatubas","Taquaraçu de Minas","Baldim","Santana do Riacho","Nova União","Bom Jesus do Amparo","São Gonçalo do Rio Abaixo","Barão de Cocais","Itabira","Raposos","Rio Acima","Nova Lima","Santa Bárbara"];
-cityList.sort((a,b)=>a.localeCompare(b,"pt-BR")).forEach(c=>{const o=document.createElement("option");o.value=c;o.textContent=c;$("#city").append(o)});
-function msg(el,text,type=""){el.textContent=text;el.className="message "+type}
-function requireConfig(){if(!db){alert("O sistema ainda precisa ser conectado ao Supabase. Consulte o arquivo LEIA-ME.");return false}return true}
-async function loadDates(){
- const date=$("#date"),slot=$("#slot");date.innerHTML='<option value="">Carregando datas...</option>';slot.innerHTML='<option value="">Escolha primeiro uma data</option>';slot.disabled=true;
- if(!requireConfig())return;
- const service=$("#bookingForm select[name=service]").value;
- if(!service){date.innerHTML='<option value="">Selecione primeiro o serviço</option>';return}
- const {data,error}=await db.rpc("available_dates",{p_service:service});
- if(error){date.innerHTML='<option value="">Não foi possível carregar datas</option>';console.error(error);return}
- date.innerHTML='<option value="">Selecione uma data disponível</option>';
- (data||[]).forEach(row=>{const v=row.available_date;const o=document.createElement("option");o.value=v;o.textContent=new Date(v+"T12:00:00").toLocaleDateString("pt-BR",{weekday:"long",day:"2-digit",month:"2-digit",year:"numeric"});date.append(o)});
- if(!data?.length)date.innerHTML='<option value="">Sem datas disponíveis no momento</option>';
-}
-async function loadSlots(){
- const slot=$("#slot");slot.disabled=true;slot.innerHTML='<option value="">Carregando horários...</option>';
- if(!$("#date").value)return;
- const {data,error}=await db.rpc("available_slots",{p_date:$("#date").value,p_service:$("#bookingForm select[name=service]").value});
- if(error){slot.innerHTML='<option value="">Indisponível</option>';console.error(error);return}
- slot.innerHTML='<option value="">Selecione um horário</option>';
- (data||[]).forEach(s=>{const o=document.createElement("option");o.value=s.slot;o.textContent=s.slot;slot.append(o)});
- if(!data?.length)slot.innerHTML='<option value="">Não há horários livres nesta data</option>';
- slot.disabled=!(data||[]).length;
-}
-$("#date").addEventListener("change",loadSlots);
-$("#bookingForm select[name=service]").addEventListener("change",loadDates);
-$("#bookingForm").addEventListener("submit",async e=>{
- e.preventDefault();if(!requireConfig())return;
- const f=new FormData(e.currentTarget);
- const payload={p_client_name:f.get("name").trim(),p_phone:f.get("phone").trim(),p_city:f.get("city"),p_service:f.get("service"),p_notes:f.get("notes").trim(),p_date:$("#date").value,p_slot:$("#slot").value};
- const button=e.currentTarget.querySelector('button[type="submit"]');button.disabled=true;button.textContent="Confirmando...";
- const {error}=await db.rpc("book_appointment",payload);
- button.disabled=false;button.textContent="Confirmar agendamento";
- if(error){msg($("#bookingMessage"),error.message.includes("SLOT_UNAVAILABLE")?"Esse horário acabou de ser reservado. Escolha outra opção.":"Não foi possível confirmar. Atualize as datas e tente novamente.","error");await loadDates();await loadSlots();return}
- msg($("#bookingMessage"),"Agendamento confirmado! A SEGMAX PROTEC recebeu seu pedido.","success");e.currentTarget.reset();await loadDates();
-});
-$("#loginOpen").onclick=()=>$("#authPanel").classList.remove("hidden");$("#closeAuth").onclick=()=>$("#authPanel").classList.add("hidden");
-$("#loginForm").addEventListener("submit",async e=>{e.preventDefault();if(!requireConfig())return;const f=new FormData(e.currentTarget);const {error}=await db.auth.signInWithPassword({email:f.get("email"),password:f.get("password")});msg($("#loginMessage"),error?error.message:"Acesso autorizado.",error?"error":"success");if(!error)showDashboard()});
-async function showDashboard(){const {data:{user}}=await db.auth.getUser();if(!user)return;$("#authPanel").classList.add("hidden");$("#dashboard").classList.remove("hidden");$("#who").textContent=user.email;await loadAppointments()}
-async function loadAppointments(){
- const day=$("#filterDate").value,status=$("#filterStatus").value;let q=db.from("appointments").select("*").order("starts_at",{ascending:true});
- if(day){const a=new Date(day+"T00:00:00"),b=new Date(day+"T23:59:59");q=q.gte("starts_at",a.toISOString()).lte("starts_at",b.toISOString())}if(status)q=q.eq("status",status);
- const {data,error}=await q;const root=$("#appointments");root.innerHTML="";if(error){root.textContent="Erro ao carregar agenda.";return}if(!data?.length){root.textContent="Nenhum atendimento encontrado.";return}
- data.forEach(a=>{const card=document.createElement("article");card.className="appointment";const info=document.createElement("div"),actions=document.createElement("div");actions.className="appt-actions";const d=new Date(a.starts_at);
- info.innerHTML=`<h3>${esc(a.client_name)} <span class="status">${esc(a.status)}</span></h3><p><b>${d.toLocaleDateString("pt-BR")} às ${d.toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"})}</b> · ${esc(a.service)}</p><p>${esc(a.phone)} · ${esc(a.city)}</p><p>${esc(a.notes||"Sem observações")}</p>`;
- const sel=document.createElement("select");["Agendado","Em andamento","Concluído","Cancelado","Reagendar"].forEach(v=>{const o=document.createElement("option");o.value=v;o.textContent=v;o.selected=v===a.status;sel.append(o)});
- const save=document.createElement("button");save.className="primary";save.textContent="Atualizar status";save.onclick=async()=>{save.disabled=true;const {error}=await db.from("appointments").update({status:sel.value}).eq("id",a.id);save.disabled=false;if(error)alert("Não foi possível atualizar.");else loadAppointments()};actions.append(sel,save);card.append(info,actions);root.append(card)});
-}
-function esc(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
-$("#logout").onclick=async()=>{await db.auth.signOut();$("#dashboard").classList.add("hidden")};$("#refresh").onclick=loadAppointments;$("#filterDate").onchange=loadAppointments;$("#filterStatus").onchange=loadAppointments;
-if(db){loadDates();db.auth.getSession().then(({data})=>{if(data.session)showDashboard()})}
+const TZ = "America/Sao_Paulo";
 
+let isAdmin = false;
+let technicians = [];
+let recovering = location.hash.includes("type=recovery");
 
-if (db) {
-  db.auth.onAuthStateChange((event) => {
-    if (event === "PASSWORD_RECOVERY") {
-      setTimeout(async () => {
-        const senha = prompt(
-          "Digite sua nova senha (mínimo de 8 caracteres):"
-        );
+const cityList = [
+  "Santa Luzia","Belo Horizonte","Sabará","Caeté",
+  "Vespasiano","São José da Lapa","Lagoa Santa",
+  "Confins","Pedro Leopoldo","Matozinhos",
+  "Capim Branco","Prudente de Morais","Sete Lagoas",
+  "Ribeirão das Neves","Esmeraldas","Contagem",
+  "Betim","Igarapé","São Joaquim de Bicas",
+  "Mateus Leme","Juatuba","Florestal",
+  "Jaboticatubas","Taquaraçu de Minas","Baldim",
+  "Santana do Riacho","Nova União",
+  "Bom Jesus do Amparo","São Gonçalo do Rio Abaixo",
+  "Barão de Cocais","Itabira","Raposos",
+  "Rio Acima","Nova Lima","Santa Bárbara"
+];
 
-        if (!senha || senha.length < 8) {
-          alert("Senha inválida. Solicite uma nova recuperação.");
-          await db.auth.signOut();
-          location.replace(location.pathname);
-          return;
+function option(value, label) {
+  return new Option(label, value);
+}
+
+cityList.sort((a,b) => a.localeCompare(b,"pt-BR"))
+  .forEach(c => $("#city").append(option(c,c)));
+
+function msg(el, text, type = "") {
+  el.textContent = text;
+  el.className = "message " + type;
+}
+
+function esc(v) {
+  return String(v ?? "").replace(/[&<>"']/g,c => ({
+    "&":"&amp;","<":"&lt;",">":"&gt;",
+    '"':"&quot;","'":"&#39;"
+  }[c]));
+}
+
+function localDate(value) {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: TZ,
+    year:"numeric",month:"2-digit",day:"2-digit"
+  }).format(new Date(value));
+}
+
+function localTime(value) {
+  return new Intl.DateTimeFormat("pt-BR", {
+    timeZone:TZ,hour:"2-digit",minute:"2-digit",
+    hourCycle:"h23"
+  }).format(new Date(value));
+}
+
+// AGENDAMENTO DO CLIENTE
+
+let dateRequest = 0;
+let slotRequest = 0;
+
+async function loadDates() {
+  const request = ++dateRequest;
+  ++slotRequest;
+
+  const date = $("#date");
+  const slot = $("#slot");
+  const service =
+    $("#bookingForm select[name=service]").value;
+
+  date.replaceChildren(option("","Carregando datas..."));
+  date.disabled = true;
+  slot.replaceChildren(option("","Escolha uma data"));
+  slot.disabled = true;
+
+  if (!service) {
+    date.replaceChildren(option("","Selecione o serviço"));
+    return;
+  }
+
+  const {data,error} = await db.rpc(
+    "available_dates",{p_service:service}
+  );
+
+  if (request !== dateRequest) return;
+
+  if (error) {
+    date.replaceChildren(option("","Erro ao carregar datas"));
+    console.error(error);
+    return;
+  }
+
+  date.replaceChildren(option("","Selecione uma data"));
+
+  (data || []).forEach(row => {
+    const v = row.available_date;
+    date.append(option(v,
+      new Date(v+"T12:00:00").toLocaleDateString(
+        "pt-BR",{
+          weekday:"long",day:"2-digit",
+          month:"2-digit",year:"numeric"
         }
+      )
+    ));
+  });
 
-        const { error } = await db.auth.updateUser({
-          password: senha
-        });
+  date.disabled = !data?.length;
+  if (!data?.length) {
+    date.replaceChildren(option("","Sem datas disponíveis"));
+  }
+}
 
-        if (error) {
-          alert("Erro ao alterar a senha: " + error.message);
-        } else {
-          alert("Senha alterada com sucesso!");
-        }
+async function loadSlots() {
+  const request = ++slotRequest;
+  const slot = $("#slot");
+  const date = $("#date").value;
+  const service =
+    $("#bookingForm select[name=service]").value;
 
-        await db.auth.signOut();
-        location.replace(location.pathname);
-      }, 0);
+  slot.disabled = true;
+  slot.replaceChildren(option("","Carregando horários..."));
+
+  if (!date || !service) return;
+
+  const {data,error} = await db.rpc(
+    "available_slots",{
+      p_date:date,p_service:service
     }
+  );
+
+  if (request !== slotRequest) return;
+
+  if (error) {
+    slot.replaceChildren(option("","Horários indisponíveis"));
+    return;
+  }
+
+  slot.replaceChildren(option("","Selecione um horário"));
+
+  (data || []).forEach(s =>
+    slot.append(option(s.slot,s.slot))
+  );
+
+  slot.disabled = !data?.length;
+
+  if (!data?.length) {
+    slot.replaceChildren(option("","Sem horários livres"));
+  }
+}
+
+$("#date").onchange = loadSlots;
+$("#bookingForm select[name=service]").onchange = loadDates;
+
+$("#bookingForm button[type=submit]").textContent =
+  "Solicitar agendamento";
+
+$(".hero p:last-child").textContent =
+  "Sem cadastro e sem senha. Escolha o serviço e solicite um horário disponível.";
+
+$("#bookingForm").onsubmit = async e => {
+  e.preventDefault();
+
+  const form = e.currentTarget;
+  const f = new FormData(form);
+  const button = form.querySelector("button[type=submit]");
+
+  const payload = {
+    p_client_name:f.get("name").trim(),
+    p_phone:f.get("phone").trim(),
+    p_city:f.get("city"),
+    p_service:f.get("service"),
+    p_notes:(f.get("notes") || "").trim(),
+    p_date:$("#date").value,
+    p_slot:$("#slot").value
+  };
+
+  button.disabled = true;
+  button.textContent = "Enviando...";
+
+  try {
+    const {error} = await db.rpc("book_appointment",payload);
+
+    if (error) throw error;
+
+    msg($("#bookingMessage"),
+      "Solicitação recebida! Aguarde a aprovação da SEGMAX PROTEC.",
+      "success");
+
+    form.reset();
+    await loadDates();
+
+  } catch(error) {
+    msg($("#bookingMessage"),
+      "Não foi possível solicitar. Verifique os horários e tente novamente.",
+      "error");
+    console.error(error);
+    await loadDates();
+  } finally {
+    button.disabled = false;
+    button.textContent = "Solicitar agendamento";
+  }
+};
+
+// AUTENTICAÇÃO
+
+$("#loginOpen").textContent = "Área da equipe";
+$("#authPanel h2").textContent = "Área da equipe";
+
+$("#loginOpen").onclick = () =>
+  $("#authPanel").classList.remove("hidden");
+
+$("#closeAuth").onclick = () =>
+  $("#authPanel").classList.add("hidden");
+
+$("#loginForm").onsubmit = async e => {
+  e.preventDefault();
+
+  const f = new FormData(e.currentTarget);
+
+  const {error} = await db.auth.signInWithPassword({
+    email:f.get("email").trim(),
+    password:f.get("password")
+  });
+
+  if (error) {
+    msg($("#loginMessage"),
+      "E-mail ou senha inválidos.","error");
+    return;
+  }
+
+  $("#loginForm").reset();
+  await showDashboard();
+};
+
+// TROCA SEGURA DE SENHA
+
+function changePassword(recovery = false) {
+  if (document.querySelector("#passwordDialog")) return;
+
+  const dialog = document.createElement("dialog");
+  dialog.id = "passwordDialog";
+  dialog.style.maxWidth = "90vw";
+  dialog.style.padding = "24px";
+
+  dialog.innerHTML = `
+    <form>
+      <h2>Alterar senha</h2>
+      <label>Nova senha
+        <input name="password" type="password"
+          autocomplete="new-password"
+          minlength="16" required>
+      </label>
+      <label>Confirmar nova senha
+        <input name="confirmation" type="password"
+          autocomplete="new-password"
+          minlength="16" required>
+      </label>
+      <p role="status"></p>
+      <button class="primary" type="submit">
+        Salvar nova senha
+      </button>
+      <button class="outline" type="button">
+        Cancelar
+      </button>
+    </form>`;
+
+  document.body.append(dialog);
+
+  const form = dialog.querySelector("form");
+  const message = dialog.querySelector("p");
+
+  async function closeDialog() {
+    dialog.close();
+    dialog.remove();
+
+    if (recovery) {
+      await db.auth.signOut();
+      location.replace(location.pathname);
+    }
+  }
+
+  dialog.querySelector("button[type=button]").onclick =
+    closeDialog;
+
+  dialog.oncancel = e => {
+    e.preventDefault();
+    closeDialog();
+  };
+
+  form.onsubmit = async e => {
+    e.preventDefault();
+
+    const f = new FormData(form);
+    const password = f.get("password");
+
+    if (password !== f.get("confirmation")) {
+      message.textContent = "As senhas não coincidem.";
+      return;
+    }
+
+    const button = form.querySelector("button[type=submit]");
+    button.disabled = true;
+
+    const {error} = await db.auth.updateUser({
+      password:password
+    });
+
+    button.disabled = false;
+
+    if (error) {
+      message.textContent =
+        "Não foi possível alterar a senha: " + error.message;
+      return;
+    }
+
+    alert("Senha alterada com sucesso. Entre novamente.");
+    await db.auth.signOut();
+    location.replace(location.pathname);
+  };
+
+  dialog.showModal();
+}
+
+const passwordButton = document.createElement("button");
+passwordButton.className = "outline";
+passwordButton.textContent = "Alterar senha";
+passwordButton.onclick = () => changePassword();
+
+$("#logout").before(passwordButton);
+
+db.auth.onAuthStateChange(event => {
+  if (event === "PASSWORD_RECOVERY") {
+    recovering = true;
+    $("#dashboard").classList.add("hidden");
+    setTimeout(() => changePassword(true),0);
+  }
+});
+
+// PAINEL ADMINISTRATIVO E TÉCNICO
+
+["Aguardando aprovação","Recusado"].forEach(status =>
+  $("#filterStatus").append(option(status,status))
+);
+
+async function showDashboard() {
+  if (recovering) return;
+
+  const {data:{user}} = await db.auth.getUser();
+  if (!user) return;
+
+  isAdmin = user.id === ADMIN_ID;
+
+  let name = user.email;
+
+  if (isAdmin) {
+    const {data,error} = await db.from("technicians")
+      .select("user_id,full_name,active")
+      .eq("active",true)
+      .order("full_name");
+
+    technicians = error ? [] : (data || []);
+    name = "Administrador - SEGMAX PROTEC";
+
+  } else {
+    const {data,error} = await db.from("technicians")
+      .select("user_id,full_name,active")
+      .eq("user_id",user.id)
+      .eq("active",true)
+      .maybeSingle();
+
+    if (error || !data) {
+      await db.auth.signOut();
+      alert("Usuário sem autorização.");
+      return;
+    }
+
+    name = "Técnico: " + data.full_name;
+  }
+
+  $("#authPanel").classList.add("hidden");
+  $("#dashboard").classList.remove("hidden");
+
+  $("#dashboard h2").textContent = isAdmin
+    ? "Painel administrativo"
+    : "Minha agenda";
+
+  $("#who").textContent = name;
+
+  await loadAppointments();
+}
+
+async function loadAppointments() {
+  if (recovering) return;
+
+  const day = $("#filterDate").value;
+  const status = $("#filterStatus").value;
+
+  let q = db.from("appointments")
+    .select("*")
+    .order("starts_at",{ascending:true});
+
+  if (day) {
+    const start = new Date(day+"T00:00:00-03:00");
+    const end = new Date(start.getTime()+86400000);
+
+    q = q.gte("starts_at",start.toISOString())
+         .lt("starts_at",end.toISOString());
+  }
+
+  if (status) q = q.eq("status",status);
+
+  const {data,error} = await q;
+  const root = $("#appointments");
+  root.replaceChildren();
+
+  if (error) {
+    root.textContent = "Erro ao carregar agenda.";
+    return;
+  }
+
+  if (!data?.length) {
+    root.textContent = "Nenhum atendimento encontrado.";
+    return;
+  }
+
+  data.forEach(a => {
+    const card = document.createElement("article");
+    card.className = "appointment";
+
+    const info = document.createElement("div");
+    const actions = document.createElement("div");
+    actions.className = "appt-actions";
+
+    const date = new Date(a.starts_at).toLocaleDateString(
+      "pt-BR",{timeZone:TZ}
+    );
+
+    const tech = technicians.find(
+      t => t.user_id === a.technician_id
+    );
+
+    info.innerHTML = `
+      <h3>${esc(a.client_name)}
+        <span class="status">${esc(a.status)}</span>
+      </h3>
+      <p><b>${date} às ${localTime(a.starts_at)}</b></p>
+      <p>${esc(a.service)}</p>
+      <p>${esc(a.phone)} · ${esc(a.city)}</p>
+      <p>${esc(a.notes || "Sem observações")}</p>
+      <p>Duração na agenda: ${esc(a.duration_minutes)} minutos</p>
+      ${isAdmin ? `<p>Técnico: ${esc(
+        tech?.full_name ||
+        (a.technician_id ? "Atribuído" : "Não atribuído")
+      )}</p>` : ""}
+    `;
+
+    card.append(info,actions);
+    root.append(card);
+
+    // Técnicos possuem acesso somente de leitura.
+    if (!isAdmin) return;
+
+    if (a.status === "Aguardando aprovação") {
+      renderApproval(a,actions);
+      return;
+    }
+
+    renderStatus(a,actions);
   });
 }
+
+// APROVAÇÃO ADMINISTRATIVA
+
+function renderApproval(a,root) {
+  const tech = document.createElement("select");
+  tech.append(option("","Selecione o técnico"));
+
+  technicians.forEach(t =>
+    tech.append(option(t.user_id,t.full_name))
+  );
+
+  const date = document.createElement("input");
+  date.type = "date";
+  date.min = localDate(new Date());
+  date.value = localDate(a.starts_at);
+
+  const slot = document.createElement("select");
+  slot.append(option("","Selecione o horário"));
+
+  const approve = document.createElement("button");
+  approve.className = "primary";
+  approve.textContent = "Aprovar agendamento";
+  approve.disabled = true;
+
+  const refuse = document.createElement("button");
+  refuse.className = "outline";
+  refuse.textContent = "Recusar solicitação";
+
+  const message = document.createElement("p");
+
+  root.append(tech,date,slot,approve,refuse,message);
+
+  let request = 0;
+
+  function validate() {
+    approve.disabled =
+      !tech.value || !date.value || !slot.value;
+  }
+
+  async function refreshSlots() {
+    const current = ++request;
+    const preferred = slot.value || localTime(a.starts_at);
+
+    slot.disabled = true;
+    slot.replaceChildren(option("","Carregando..."));
+    validate();
+
+    if (!date.value) return;
+
+    const {data,error} = await db.rpc("available_slots",{
+      p_date:date.value,
+      p_service:a.service
+    });
+
+    if (current !== request) return;
+
+    slot.replaceChildren(option("","Selecione o horário"));
+
+    if (error) {
+      message.textContent = "Erro ao consultar horários.";
+      return;
+    }
+
+    (data || []).forEach(s =>
+      slot.append(option(s.slot,s.slot))
+    );
+
+    if ((data || []).some(s => s.slot === preferred)) {
+      slot.value = preferred;
+    }
+
+    slot.disabled = !data?.length;
+    validate();
+  }
+
+  tech.onchange = validate;
+  slot.onchange = validate;
+  date.onchange = refreshSlots;
+
+  approve.onclick = async () => {
+    approve.disabled = true;
+    refuse.disabled = true;
+    message.textContent = "Aprovando...";
+
+    const {error} = await db.rpc("approve_appointment",{
+      p_appointment_id:a.id,
+      p_technician_id:tech.value,
+      p_date:date.value,
+      p_slot:slot.value
+    });
+
+    if (error) {
+      message.textContent =
+        error.message.includes("TECHNICIAN_BUSY")
+          ? "Técnico ocupado. Escolha outro técnico ou horário."
+          : "Não foi possível aprovar: " + error.message;
+
+      refuse.disabled = false;
+      validate();
+      return;
+    }
+
+    alert("Agendamento aprovado com sucesso!");
+    await loadAppointments();
+    await loadDates();
+  };
+
+  refuse.onclick = async () => {
+    if (!confirm("Deseja recusar esta solicitação?")) return;
+
+    approve.disabled = true;
+    refuse.disabled = true;
+
+    const {data,error} = await db.from("appointments")
+      .update({status:"Recusado"})
+      .eq("id",a.id)
+      .eq("status","Aguardando aprovação")
+      .select("id");
+
+    if (error || !data?.length) {
+      message.textContent = "Não foi possível recusar.";
+      refuse.disabled = false;
+      validate();
+      return;
+    }
+
+    await loadAppointments();
+    await loadDates();
+  };
+
+  refreshSlots();
+}
+
+// ATUALIZAÇÃO DE STATUS
+
+function renderStatus(a,root) {
+  const transitions = {
+    "Agendado":["Em andamento","Concluído","Cancelado"],
+    "Em andamento":["Concluído","Cancelado"]
+  };
+
+  const allowed = transitions[a.status] || [];
+  if (!allowed.length) return;
+
+  const select = document.createElement("select");
+  select.append(option(a.status,a.status));
+
+  allowed.forEach(s => select.append(option(s,s)));
+
+  const save = document.createElement("button");
+  save.className = "primary";
+  save.textContent = "Atualizar status";
+
+  save.onclick = async () => {
+    if (select.value === a.status) return;
+
+    save.disabled = true;
+
+    const {data,error} = await db.from("appointments")
+      .update({status:select.value})
+      .eq("id",a.id)
+      .eq("status",a.status)
+      .select("id");
+
+    save.disabled = false;
+
+    if (error || !data?.length) {
+      alert("Não foi possível atualizar o status.");
+      return;
+    }
+
+    await loadAppointments();
+    await loadDates();
+  };
+
+  root.append(select,save);
+}
+
+// INICIALIZAÇÃO
+
+$("#logout").onclick = async () => {
+  await db.auth.signOut();
+  isAdmin = false;
+  technicians = [];
+  $("#appointments").replaceChildren();
+  $("#dashboard").classList.add("hidden");
+};
+
+$("#refresh").onclick = loadAppointments;
+$("#filterDate").onchange = loadAppointments;
+$("#filterStatus").onchange = loadAppointments;
+
+loadDates();
+
+db.auth.getSession().then(({data}) => {
+  if (data.session && !recovering) {
+    showDashboard();
+  }
+});
