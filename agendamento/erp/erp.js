@@ -3381,3 +3381,456 @@ async function renderServiceIntegration(item, card) {
     );
 
 })();
+
+
+// ==========================================
+// SEGMAX PROTEC - CONFIGURACOES
+// ==========================================
+
+(function () {
+
+    "use strict";
+
+    const ERP = window.SEGMAX;
+
+    const db = ERP.db;
+
+    const esc = ERP.escapeHTML;
+
+    async function loadConfiguracoes() {
+
+        if (!ERP.isAdmin()) {
+
+            ERP.notify(
+                "Acesso restrito ao administrador.",
+                "error"
+            );
+
+            return;
+
+        }
+
+        const version = ERP.getSessionVersion();
+
+        const anchor = document.getElementById(
+            "configuracoesContent"
+        );
+
+        anchor.innerHTML = `
+
+            <div class="content-card">
+
+                <h3>Dados da empresa</h3>
+
+                <p>
+                    <strong>Empresa:</strong>
+                    SEGMAX PROTEC
+                </p>
+
+                <p>
+                    <strong>Telefone comercial:</strong>
+                    (31) 98420-5162
+                </p>
+
+                <p>
+                    <strong>Site:</strong>
+
+                    <a
+                        href="https://segmaxprotec.com.br"
+                        target="_blank"
+                        rel="noopener noreferrer">
+
+                        segmaxprotec.com.br
+
+                    </a>
+                </p>
+
+                <p>
+                    <strong>Atendimento:</strong>
+                    Segunda a sábado
+                </p>
+
+                <p>
+                    <strong>Horário:</strong>
+                    08h às 20h
+                </p>
+
+                <p>
+                    <strong>Intervalo:</strong>
+                    12h às 13h
+                </p>
+
+                <p>
+                    <strong>Área de atendimento:</strong>
+                    Santa Luzia e região,
+                    até 100 km
+                </p>
+
+                <p>
+                    <strong>Fuso horário:</strong>
+                    America/Sao_Paulo
+                </p>
+
+                <p>
+                    <strong>Moeda:</strong>
+                    Real brasileiro (BRL)
+                </p>
+
+            </div>
+
+            <div class="content-card">
+
+                <h3>Equipe cadastrada</h3>
+
+                <div data-team>
+
+                    Consultando equipe...
+
+                </div>
+
+            </div>
+
+            <div class="content-card">
+
+                <h3>Segurança e permissões</h3>
+
+                <div class="table-wrapper">
+
+                    <table>
+
+                        <thead>
+
+                            <tr>
+
+                                <th>Recurso</th>
+
+                                <th>Administrador</th>
+
+                                <th>Sócios</th>
+
+                            </tr>
+
+                        </thead>
+
+                        <tbody>
+
+                            <tr>
+
+                                <td>Agenda compartilhada</td>
+
+                                <td>Gerenciamento</td>
+
+                                <td>Consulta</td>
+
+                            </tr>
+
+                            <tr>
+
+                                <td>CRM de clientes</td>
+
+                                <td>Gerenciamento</td>
+
+                                <td>Cadastro e consulta</td>
+
+                            </tr>
+
+                            <tr>
+
+                                <td>Ordens de serviço</td>
+
+                                <td>Gerenciamento</td>
+
+                                <td>Próprios serviços</td>
+
+                            </tr>
+
+                            <tr>
+
+                                <td>Desempenho</td>
+
+                                <td>Consulta</td>
+
+                                <td>Consulta</td>
+
+                            </tr>
+
+                            <tr>
+
+                                <td>Relatórios administrativos</td>
+
+                                <td>Permitido</td>
+
+                                <td>Bloqueado</td>
+
+                            </tr>
+
+                            <tr>
+
+                                <td>Exportação administrativa</td>
+
+                                <td>Permitido</td>
+
+                                <td>Bloqueado</td>
+
+                            </tr>
+
+                            <tr>
+
+                                <td>Reabertura de caixa</td>
+
+                                <td>Permitido</td>
+
+                                <td>Bloqueado</td>
+
+                            </tr>
+
+                            <tr>
+
+                                <td>Configurações</td>
+
+                                <td>Permitido</td>
+
+                                <td>Bloqueado</td>
+
+                            </tr>
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+                <p>
+                    As permissões efetivas são
+                    controladas pelo Supabase.
+                </p>
+
+            </div>
+
+            <div class="content-card">
+
+                <h3>Diagnóstico do sistema</h3>
+
+                <p>
+                    <strong>Versão:</strong>
+                    SEGMAX ERP 2.0
+                </p>
+
+                <p>
+                    <strong>Banco de dados:</strong>
+                    Supabase
+                </p>
+
+                <p>
+                    <strong>Hospedagem:</strong>
+                    GitHub Pages
+                </p>
+
+                <p data-connection>
+
+                    Conexão ainda não verificada.
+
+                </p>
+
+                <button
+                    type="button"
+                    class="btn-primary"
+                    data-test>
+
+                    Testar conexão
+
+                </button>
+
+            </div>
+
+        `;
+
+        const team = anchor.querySelector(
+            "[data-team]"
+        );
+
+        const connection = anchor.querySelector(
+            "[data-connection]"
+        );
+
+        const test = anchor.querySelector(
+            "[data-test]"
+        );
+
+        function validSession() {
+
+            return ERP.isAdmin()
+
+                && ERP.getSessionVersion() === version
+
+                && team.isConnected;
+
+        }
+
+        // ==================================
+        // CONSULTAR EQUIPE
+        // ==================================
+
+        async function loadTeam() {
+
+            const { data, error } = await db
+
+                .from("technicians")
+
+                .select(
+                    "full_name,active"
+                )
+
+                .order("full_name");
+
+            if (!validSession()) return;
+
+            if (error) {
+
+                team.textContent =
+                    "Não foi possível consultar a equipe.";
+
+                return;
+
+            }
+
+            if (!data?.length) {
+
+                team.textContent =
+                    "Nenhum técnico cadastrado.";
+
+                return;
+
+            }
+
+            team.innerHTML = `
+
+                <div class="table-wrapper">
+
+                    <table>
+
+                        <thead>
+
+                            <tr>
+
+                                <th>Nome</th>
+
+                                <th>Situação</th>
+
+                            </tr>
+
+                        </thead>
+
+                        <tbody>
+
+                            ${data.map(item => `
+
+                                <tr>
+
+                                    <td>
+
+                                        ${esc(item.full_name)}
+
+                                    </td>
+
+                                    <td>
+
+                                        ${item.active
+                                            ? "Ativo"
+                                            : "Inativo"}
+
+                                    </td>
+
+                                </tr>
+
+                            `).join("")}
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            `;
+
+        }
+
+        // ==================================
+        // TESTAR CONEXAO E AUTORIZACAO
+        // ==================================
+
+        async function testConnection() {
+
+            if (!validSession()) return;
+
+            test.disabled = true;
+
+            connection.textContent =
+                "Verificando conexão...";
+
+            connection.className = "";
+
+            try {
+
+                const { data, error } = await db.rpc(
+                    "is_admin"
+                );
+
+                if (!validSession()) return;
+
+                if (error || data !== true) {
+
+                    connection.textContent =
+                        "Conexão ou autorização não confirmada.";
+
+                    connection.className =
+                        "message-error";
+
+                    return;
+
+                }
+
+                connection.textContent =
+                    "Conexão estabelecida. "
+                    + "Autorização administrativa confirmada.";
+
+                connection.className =
+                    "message-success";
+
+            } catch (_) {
+
+                if (!validSession()) return;
+
+                connection.textContent =
+                    "Falha ao verificar a conexão.";
+
+                connection.className =
+                    "message-error";
+
+            } finally {
+
+                if (validSession()) {
+
+                    test.disabled = false;
+
+                }
+
+            }
+
+        }
+
+        test.onclick = testConnection;
+
+        await loadTeam();
+
+    }
+
+    ERP.registerModule(
+
+        "configuracoes",
+
+        loadConfiguracoes
+
+    );
+
+})();
