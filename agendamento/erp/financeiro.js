@@ -1442,3 +1442,981 @@
     );
 
 })();
+
+// ==========================================
+// SEGMAX PROTEC - ERP 2.0
+// MODULO FINANCEIRO - PARTE 2
+// LIQUIDACAO DE PAGAMENTOS E PARCELAS
+// ==========================================
+
+"use strict";
+
+(() => {
+
+    const ERP = window.SEGMAX;
+
+    if (!ERP) return;
+
+    const db = ERP.db;
+
+    const esc = ERP.escapeHTML;
+
+    const $ = selector =>
+        document.querySelector(selector);
+
+    // ======================================
+    // PAINEL DE LIQUIDACOES
+    // ======================================
+
+    async function loadLiquidacoes() {
+
+        const version = ERP.getSessionVersion();
+
+        const user = ERP.getUser();
+
+        if (!user) return;
+
+        const container = $("#receberContent");
+
+        if (!container) return;
+
+        const previous = $("#settlementPanel");
+
+        if (previous) previous.remove();
+
+        const panel = document.createElement("div");
+
+        panel.id = "settlementPanel";
+
+        panel.className = "table-card";
+
+        panel.innerHTML = `
+
+            <h2>Recebimentos e liquidações</h2>
+
+            <p class="muted">
+
+                Confirme somente valores que
+                efetivamente entraram na conta.
+
+            </p>
+
+            <div class="filters">
+
+                <div>
+
+                    <label for="settlementStart">
+                        Previsão inicial
+                    </label>
+
+                    <input
+                        id="settlementStart"
+                        type="date"
+                        required>
+
+                </div>
+
+                <div>
+
+                    <label for="settlementEnd">
+                        Previsão final
+                    </label>
+
+                    <input
+                        id="settlementEnd"
+                        type="date"
+                        required>
+
+                </div>
+
+                <button
+                    id="settlementSearch"
+                    class="btn-secondary">
+
+                    Consultar
+
+                </button>
+
+            </div>
+
+            <div
+                id="settlementMessage"
+                role="status"
+                aria-live="polite">
+            </div>
+
+            <h3>Pagamentos não parcelados</h3>
+
+            <div
+                id="singlePaymentList"
+                class="table-wrapper">
+            </div>
+
+            <h3>Parcelas de cartão</h3>
+
+            <div
+                id="installmentList"
+                class="table-wrapper">
+            </div>
+
+            <div
+                id="settlementFormArea"
+                hidden>
+
+                <div class="form-card">
+
+                    <h3>Confirmar recebimento</h3>
+
+                    <p id="settlementDescription"></p>
+
+                    <form id="settlementForm">
+
+                        <div class="form-grid">
+
+                            <div>
+
+                                <label for="settlementDate">
+                                    Data real do recebimento *
+                                </label>
+
+                                <input
+                                    id="settlementDate"
+                                    type="date"
+                                    required>
+
+                            </div>
+
+                            <div>
+
+                                <label for="settlementFee">
+                                    Taxa real (R$) *
+                                </label>
+
+                                <input
+                                    id="settlementFee"
+                                    type="number"
+                                    min="0"
+                                    step="0.01"
+                                    required>
+
+                            </div>
+
+                            <div class="full-width">
+
+                                <div class="stat-card">
+
+                                    <span>
+                                        Valor líquido recebido
+                                    </span>
+
+                                    <strong id="settlementNet">
+                                        R$ 0,00
+                                    </strong>
+
+                                </div>
+
+                            </div>
+
+                            <div class="full-width">
+
+                                <button
+                                    type="submit"
+                                    id="confirmSettlement"
+                                    class="btn-success">
+
+                                    Confirmar recebimento
+
+                                </button>
+
+                                <button
+                                    type="button"
+                                    id="cancelSettlement"
+                                    class="btn-secondary">
+
+                                    Cancelar
+
+                                </button>
+
+                            </div>
+
+                        </div>
+
+                    </form>
+
+                </div>
+
+            </div>
+
+        `;
+
+        container.append(panel);
+
+        const records = new Map();
+
+        let selected = null;
+
+        let saving = false;
+
+        let requestId = 0;
+
+        function validSession() {
+
+            return (
+
+                version === ERP.getSessionVersion() &&
+
+                panel.isConnected
+
+            );
+
+        }
+
+        function message(text, type = "") {
+
+            if (!validSession()) return;
+
+            const element = $("#settlementMessage");
+
+            element.textContent = text;
+
+            element.className = type
+
+                ? `message-${type}`
+
+                : "";
+
+        }
+
+        // ==================================
+        // PERIODO DE CONSULTA
+        // ==================================
+
+        function addDays(date, days) {
+
+            const value = new Date(
+                date + "T12:00:00Z"
+            );
+
+            value.setUTCDate(
+                value.getUTCDate() + days
+            );
+
+            return value.toISOString().slice(0, 10);
+
+        }
+
+        $("#settlementStart").value =
+
+            addDays(ERP.today(), -90);
+
+        $("#settlementEnd").value =
+
+            addDays(ERP.today(), 365);
+
+        $("#settlementDate").value = ERP.today();
+
+        $("#settlementDate").max = ERP.today();
+
+        // ==================================
+        // RENDERIZAR TABELAS
+        // ==================================
+
+        function renderTable(element, items, type) {
+
+            if (!items.length) {
+
+                element.textContent =
+
+                    "Nenhum recebimento pendente no período.";
+
+                return;
+
+            }
+
+            element.innerHTML = `
+
+                <table>
+
+                    <thead>
+
+                        <tr>
+
+                            <th>Identificação</th>
+                            <th>Previsão</th>
+                            <th>Valor bruto</th>
+                            <th>Taxa prevista</th>
+                            <th>Líquido previsto</th>
+                            <th>Ação</th>
+
+                        </tr>
+
+                    </thead>
+
+                    <tbody>
+
+                        ${items.map(item => {
+
+                            const id = type === "installment"
+
+                                ? item.installment_id
+
+                                : item.id;
+
+                            const key = `${type}:${id}`;
+
+                            const gross = Number(
+
+                                type === "installment"
+
+                                    ? item.gross_amount
+
+                                    : item.amount
+
+                            );
+
+                            const fee = Number(
+
+                                item.transaction_fee || 0
+
+                            );
+
+                            const expectedDate =
+
+                                type === "installment"
+
+                                    ? item.expected_date
+
+                                    : item.expected_settlement_date;
+
+                            const description =
+
+                                type === "installment"
+
+                                    ? `${item.customer_name} - ` +
+
+                                      `${item.installment_number}/` +
+
+                                      `${item.total_installments}`
+
+                                    : `Pagamento ${String(id).slice(0, 8)} - ` +
+
+                                      `${item.payment_method}`;
+
+                            records.set(key, {
+
+                                id,
+
+                                type,
+
+                                gross,
+
+                                fee,
+
+                                description,
+
+                                paymentDate:
+
+                                    item.payment_date || null
+
+                            });
+
+                            return `
+
+                                <tr>
+
+                                    <td>
+                                        ${esc(description)}
+                                    </td>
+
+                                    <td>
+                                        ${esc(
+                                            ERP.formatDate(expectedDate)
+                                        )}
+                                    </td>
+
+                                    <td>
+                                        ${esc(ERP.money(gross))}
+                                    </td>
+
+                                    <td>
+                                        ${esc(ERP.money(fee))}
+                                    </td>
+
+                                    <td>
+                                        ${esc(ERP.money(gross - fee))}
+                                    </td>
+
+                                    <td>
+
+                                        <button
+                                            type="button"
+                                            class="btn-success"
+                                            data-settlement="${esc(key)}">
+
+                                            Confirmar
+
+                                        </button>
+
+                                    </td>
+
+                                </tr>
+
+                            `;
+
+                        }).join("")}
+
+                    </tbody>
+
+                </table>
+
+            `;
+
+        }
+
+        // ==================================
+        // CONSULTAR RECEBIMENTOS
+        // ==================================
+
+        async function loadRecords() {
+
+            if (!validSession() || saving) return;
+
+            const start = $("#settlementStart").value;
+
+            const end = $("#settlementEnd").value;
+
+            if (!start || !end || start > end) {
+
+                message(
+
+                    "Informe um período válido.",
+
+                    "error"
+
+                );
+
+                return;
+
+            }
+
+            const request = ++requestId;
+
+            selected = null;
+
+            records.clear();
+
+            $("#settlementFormArea").hidden = true;
+
+            $("#singlePaymentList").textContent =
+
+                "Carregando pagamentos...";
+
+            $("#installmentList").textContent =
+
+                "Carregando parcelas...";
+
+            let paymentsQuery = db
+
+                .from("payments")
+
+                .select(
+
+                    "id,service_order_id,amount," +
+
+                    "payment_method,payment_date," +
+
+                    "received_by,transaction_fee," +
+
+                    "expected_settlement_date"
+
+                )
+
+                .eq("installments", 1)
+
+                .eq("settlement_status", "Pendente")
+
+                .or(
+
+                    `expected_settlement_date.is.null,` +
+
+                    `and(expected_settlement_date.gte.${start},` +
+
+                    `expected_settlement_date.lte.${end})`
+
+                )
+
+                .order("expected_settlement_date", {
+
+                    ascending: true
+
+                })
+
+                .limit(100);
+
+            if (!ERP.isAdmin()) {
+
+                paymentsQuery = paymentsQuery.eq(
+
+                    "received_by",
+
+                    user.id
+
+                );
+
+            }
+
+            const [payments, installments] =
+
+                await Promise.all([
+
+                    paymentsQuery,
+
+                    db.rpc(
+
+                        "get_payment_installments",
+
+                        {
+
+                            p_start_date: start,
+
+                            p_end_date: end,
+
+                            p_status: "Pendente"
+
+                        }
+
+                    )
+
+                ]);
+
+            if (
+
+                !validSession() ||
+
+                request !== requestId
+
+            ) return;
+
+            if (payments.error) {
+
+                $("#singlePaymentList").textContent =
+
+                    "Consulta indisponível para este perfil.";
+
+            } else {
+
+                renderTable(
+
+                    $("#singlePaymentList"),
+
+                    payments.data || [],
+
+                    "payment"
+
+                );
+
+                if (payments.data?.length === 100) {
+
+                    message(
+
+                        "Limite de 100 pagamentos. Reduza o período.",
+
+                        "warning"
+
+                    );
+
+                }
+
+            }
+
+            if (
+
+                installments.error ||
+
+                !Array.isArray(installments.data)
+
+            ) {
+
+                $("#installmentList").textContent =
+
+                    "Não foi possível consultar as parcelas.";
+
+            } else {
+
+                renderTable(
+
+                    $("#installmentList"),
+
+                    installments.data,
+
+                    "installment"
+
+                );
+
+            }
+
+        }
+
+        // ==================================
+        // SELECIONAR RECEBIMENTO
+        // ==================================
+
+        panel.addEventListener("click", event => {
+
+            const button = event.target.closest(
+
+                "[data-settlement]"
+
+            );
+
+            if (!button || saving || !validSession()) {
+                return;
+            }
+
+            selected = records.get(
+
+                button.dataset.settlement
+
+            );
+
+            if (!selected) return;
+
+            $("#settlementDescription").textContent =
+
+                selected.description +
+
+                " | Bruto: " +
+
+                ERP.money(selected.gross);
+
+            $("#settlementDate").value = ERP.today();
+
+            $("#settlementDate").min =
+
+                selected.paymentDate || "";
+
+            $("#settlementFee").value = selected.fee;
+
+            $("#settlementFee").max = selected.gross;
+
+            $("#settlementFormArea").hidden = false;
+
+            calculateNet();
+
+            $("#settlementFormArea").scrollIntoView({
+
+                behavior: "auto",
+
+                block: "nearest"
+
+            });
+
+        });
+
+        function calculateNet() {
+
+            if (!selected) return;
+
+            const fee = Number(
+
+                $("#settlementFee").value
+
+            );
+
+            $("#settlementNet").textContent =
+
+                ERP.money(selected.gross - fee);
+
+        }
+
+        $("#settlementFee").addEventListener(
+
+            "input",
+
+            calculateNet
+
+        );
+
+        $("#cancelSettlement").addEventListener(
+
+            "click",
+
+            () => {
+
+                if (saving) return;
+
+                selected = null;
+
+                $("#settlementFormArea").hidden = true;
+
+            }
+
+        );
+
+        // ==================================
+        // CONFIRMAR LIQUIDACAO
+        // ==================================
+
+        $("#settlementForm").addEventListener(
+
+            "submit",
+
+            async event => {
+
+                event.preventDefault();
+
+                if (
+
+                    saving ||
+
+                    !selected ||
+
+                    !validSession()
+
+                ) return;
+
+                const record = selected;
+
+                const date = $("#settlementDate").value;
+
+                const fee = Number(
+
+                    $("#settlementFee").value
+
+                );
+
+                if (
+
+                    !date ||
+
+                    date > ERP.today() ||
+
+                    (
+
+                        record.paymentDate &&
+
+                        date < record.paymentDate
+
+                    )
+
+                ) {
+
+                    message(
+
+                        "Data de recebimento inválida.",
+
+                        "error"
+
+                    );
+
+                    return;
+
+                }
+
+                if (
+
+                    !Number.isFinite(fee) ||
+
+                    fee < 0 ||
+
+                    fee > record.gross
+
+                ) {
+
+                    message(
+
+                        "Confira a taxa informada.",
+
+                        "error"
+
+                    );
+
+                    return;
+
+                }
+
+                const confirmed = window.confirm(
+
+                    "Confirma o recebimento real de " +
+
+                    ERP.money(record.gross - fee) +
+
+                    " em " +
+
+                    ERP.formatDate(date) +
+
+                    "?"
+
+                );
+
+                if (!confirmed) return;
+
+                const button = $("#confirmSettlement");
+
+                saving = true;
+
+                button.disabled = true;
+
+                button.textContent = "Confirmando...";
+
+                try {
+
+                    let result;
+
+                    if (record.type === "installment") {
+
+                        result = await db.rpc(
+
+                            "confirm_installment_settlement",
+
+                            {
+
+                                p_installment_id: record.id,
+
+                                p_settlement_date: date,
+
+                                p_transaction_fee: fee
+
+                            }
+
+                        );
+
+                    } else {
+
+                        result = await db.rpc(
+
+                            "confirm_payment_settlement",
+
+                            {
+
+                                p_payment_id: record.id,
+
+                                p_settlement_date: date,
+
+                                p_transaction_fee: fee
+
+                            }
+
+                        );
+
+                    }
+
+                    if (!validSession()) return;
+
+                    if (
+
+                        result.error ||
+
+                        result.data !== true
+
+                    ) {
+
+                        message(
+
+                            "Recebimento não confirmado. Verifique permissões, datas e fechamento de caixa.",
+
+                            "error"
+
+                        );
+
+                        return;
+
+                    }
+
+                    selected = null;
+
+                    $("#settlementFormArea").hidden = true;
+
+                    message(
+
+                        "Recebimento confirmado com sucesso!",
+
+                        "success"
+
+                    );
+
+                } catch (_) {
+
+                    message(
+
+                        "Falha de conexão. Consulte novamente antes de repetir a operação.",
+
+                        "error"
+
+                    );
+
+                } finally {
+
+                    saving = false;
+
+                    if (validSession()) {
+
+                        button.disabled = false;
+
+                        button.textContent =
+
+                            "Confirmar recebimento";
+
+                        await loadRecords();
+
+                    }
+
+                }
+
+            }
+
+        );
+
+        $("#settlementSearch").addEventListener(
+
+            "click",
+
+            () => {
+
+                message("");
+
+                void loadRecords();
+
+            }
+
+        );
+
+        await loadRecords();
+
+    }
+
+    // ======================================
+    // INTEGRAR AO MODULO CONTAS A RECEBER
+    // ======================================
+
+    document.addEventListener("DOMContentLoaded", () => {
+
+        const button = document.querySelector(
+
+            '#mainMenu [data-module="receber"]'
+
+        );
+
+        if (!button) return;
+
+        button.addEventListener("click", () => {
+
+            if (!ERP.getUser()) return;
+
+            void loadLiquidacoes().catch(() => {
+
+                ERP.notify(
+
+                    "Não foi possível carregar as liquidações.",
+
+                    "error"
+
+                );
+
+            });
+
+        });
+
+    });
+
+})();
