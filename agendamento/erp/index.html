@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <meta name="robots" content="noindex, nofollow">
+
+    <title>SEGMAX PROTEC | Sistema de Gestão</title>
+
+    <link rel="icon" href="../../img/logo.png">
+
+    <link rel="stylesheet" href="erp.css">
+
+    <script defer
+        src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2">
+    </script>
+
+    <script defer src="erp.js"></script>
+    <script defer src="clientes.js"></script>
+    <script defer src="servicos.js"></script>
+    <script defer src="financeiro.js"></script>
+    <script defer src="relatorios.js"></script>
+</head>
+
+<body>
+
+    <!-- TELA DE LOGIN -->
+
+    <section id="loginScreen" class="login-screen">
+
+        <div class="login-card">
+
+            <img src="../../img/logo.png"
+                 alt="SEGMAX PROTEC"
+                 class="login-logo">
+
+            <h1>SEGMAX PROTEC</h1>
+
+            <h2>Sistema de Gestão Empresarial</h2>
+
+            <p>Acesso exclusivo à equipe autorizada.</p>
+
+            <form id="loginForm" method="post">
+
+                <label for="email">E-mail</label>
+
+                <input type="email"
+                       id="email"
+                       name="email"
+                       autocomplete="username"
+                       placeholder="Digite seu e-mail"
+                       required>
+
+                <label for="password">Senha</label>
+
+                <input type="password"
+                       id="password"
+                       name="password"
+                       autocomplete="current-password"
+                       placeholder="Digite sua senha"
+                       required>
+
+                <button type="submit"
+                        id="loginButton"
+                        class="btn-primary"
+                        disabled>
+                    Entrar no sistema
+                </button>
+
+                <p id="loginMessage"
+                   role="status"
+                   aria-live="polite">
+                    Sistema em desenvolvimento.
+                </p>
+
+            </form>
+
+            <a href="../index.html">
+                Voltar ao agendamento
+            </a>
+
+        </div>
+
+    </section>
+
+
+    <!-- SISTEMA INTERNO -->
+
+    <div id="erpScreen" hidden>
+
+        <!-- MENU LATERAL -->
+
+        <aside id="sidebar" class="sidebar">
+
+            <div class="sidebar-brand">
+
+                <img src="../../img/logobranco.png"
+                     alt="SEGMAX PROTEC"
+                     class="sidebar-logo">
+
+                <h2>SEGMAX PROTEC</h2>
+
+                <span>ERP &amp; CRM</span>
+
+            </div>
+
+            <nav id="mainMenu"
+                 aria-label="Menu principal">
+
+                <button type="button"
+                        class="menu-item active"
+                        data-module="dashboard">
+                    Visão geral
+                </button>
+
+                <button type="button"
+                        class="menu-item"
+                        data-module="agenda">
+                    Agenda
+                </button>
+
+                <button type="button"
+                        class="menu-item"
+                        data-module="clientes">
+                    Clientes
+                </button>
+
+                <button type="button"
+                        class="menu-item"
+                        data-module="servicos">
+                    Ordens de serviço
+                </button>
+
+                <button type="button"
+                        class="menu-item"
+                        data-module="pagamentos">
+                    Pagamentos
+                </button>
+
+                <button type="button"
+                        class="menu-item"
+                        data-module="receber">
+                    Contas a receber
+                </button>
+
+                <button type="button"
+                        class="menu-item"
+                        data-module="materiais">
+                    Materiais
+                </button>
+
+                <button type="button"
+                        class="menu-item"
+                        data-module="despesas">
+                    Despesas
+                </button>
+
+                <button type="button"
+                        class="menu-item"
+                        data-module="desempenho">
+                    Desempenho dos sócios
+                </button>
+
+                <button type="button"
+                        class="menu-item"
+                        data-module="caixa">
+                    Caixa diário
+                </button>
+
+                <button type="button"
+                        class="menu-item"
+                        data-module="relatorios"
+                        data-admin-only
+                        hidden>
+                    Relatórios administrativos
+                </button>
+
+                <button type="button"
+                        class="menu-item"
+                        data-module="configuracoes"
+                        data-admin-only
+                        hidden>
+                    Configurações
+                </button>
+
+            </nav>
+
+            <div class="sidebar-footer">
+
+                <a href="../../index.html">
+                    Site institucional
+                </a>
+
+                <button type="button"
+                        id="logoutButton"
+                        class="btn-danger">
+                    Sair do sistema
+                </button>
+
+            </div>
+
+        </aside>
+
+
+        <!-- CONTEÚDO PRINCIPAL -->
+
+        <main class="main-content">
+
+            <header class="topbar">
+
+                <button type="button"
+                        id="menuToggle"
+                        aria-label="Abrir menu"
+                        aria-controls="sidebar"
+                        aria-expanded="false">
+                    ☰
+                </button>
+
+                <div>
+
+                    <h1 id="pageTitle">
+                        Visão geral
+                    </h1>
+
+                    <p id="currentDate"></p>
+
+                </div>
+
+                <div class="user-profile">
+
+                    <strong id="userName">
+                        Usuário
+                    </strong>
+
+                    <span id="userRole"></span>
+
+                </div>
+
+            </header>
+
+            <div id="globalMessage"
+                 role="status"
+                 aria-live="polite">
+            </div>
+
+
+            <!-- DASHBOARD -->
+
+            <section id="module-dashboard"
+                     class="module">
+
+                <div class="welcome-card">
+
+                    <h2>Bem-vindo à SEGMAX PROTEC</h2>
+
+                    <p>
+                        Gerencie seus atendimentos,
+                        clientes e resultados.
+                    </p>
+
+                </div>
+
+                <div class="dashboard-grid">
+
+                    <article class="stat-card">
+                        <span>Agendamentos de hoje</span>
+                        <strong id="statAppointments">—</strong>
+                    </article>
+
+                    <article class="stat-card">
+                        <span>Clientes cadastrados</span>
+                        <strong id="statCustomers">—</strong>
+                    </article>
+
+                    <article class="stat-card">
+                        <span>Serviços concluídos</span>
+                        <strong id="statServices">—</strong>
+                    </article>
+
+                    <article class="stat-card">
+                        <span>Recebimentos de hoje</span>
+                        <strong id="statReceived">—</strong>
+                    </article>
+
+                    <article class="stat-card">
+                        <span>Valores a receber</span>
+                        <strong id="statPending">—</strong>
+                    </article>
+
+                    <article class="stat-card">
+                        <span>Saldo diário da empresa</span>
+                        <strong id="statBalance">—</strong>
+                    </article>
+
+                </div>
+
+                <div class="content-card">
+
+                    <h2>Próximos atendimentos</h2>
+
+                    <div id="dashboardAppointments"></div>
+
+                </div>
+
+            </section>
+
+
+            <!-- AGENDA -->
+
+            <section id="module-agenda"
+                     class="module" hidden>
+
+                <h2>Agenda compartilhada</h2>
+
+                <div id="agendaContent"></div>
+
+            </section>
+
+
+            <!-- CLIENTES -->
+
+            <section id="module-clientes"
+                     class="module" hidden>
+
+                <h2>Cadastro e gestão de clientes</h2>
+
+                <div id="clientesContent"></div>
+
+            </section>
+
+
+            <!-- ORDENS DE SERVIÇO -->
+
+            <section id="module-servicos"
+                     class="module" hidden>
+
+                <h2>Ordens de serviço</h2>
+
+                <div id="servicosContent"></div>
+
+            </section>
+
+
+            <!-- PAGAMENTOS -->
+
+            <section id="module-pagamentos"
+                     class="module" hidden>
+
+                <h2>Registro de pagamentos</h2>
+
+                <div id="pagamentosContent"></div>
+
+            </section>
+
+
+            <!-- CONTAS A RECEBER -->
+
+            <section id="module-receber"
+                     class="module" hidden>
+
+                <h2>Contas a receber</h2>
+
+                <div id="receberContent"></div>
+
+            </section>
+
+
+            <!-- MATERIAIS -->
+
+            <section id="module-materiais"
+                     class="module" hidden>
+
+                <h2>Materiais utilizados</h2>
+
+                <div id="materiaisContent"></div>
+
+            </section>
+
+
+            <!-- DESPESAS -->
+
+            <section id="module-despesas"
+                     class="module" hidden>
+
+                <h2>Despesas operacionais</h2>
+
+                <div id="despesasContent"></div>
+
+            </section>
+
+
+            <!-- DESEMPENHO -->
+
+            <section id="module-desempenho"
+                     class="module" hidden>
+
+                <h2>Desempenho dos sócios</h2>
+
+                <div id="desempenhoContent"></div>
+
+            </section>
+
+
+            <!-- CAIXA -->
+
+            <section id="module-caixa"
+                     class="module" hidden>
+
+                <h2>Caixa diário e acertos financeiros</h2>
+
+                <div id="caixaContent"></div>
+
+            </section>
+
+
+            <!-- RELATÓRIOS ADMINISTRATIVOS -->
+
+            <section id="module-relatorios"
+                     class="module"
+                     data-admin-only hidden>
+
+                <h2>Relatórios administrativos</h2>
+
+                <div id="relatoriosContent"></div>
+
+            </section>
+
+
+            <!-- CONFIGURAÇÕES -->
+
+            <section id="module-configuracoes"
+                     class="module"
+                     data-admin-only hidden>
+
+                <h2>Configurações do sistema</h2>
+
+                <div id="configuracoesContent"></div>
+
+            </section>
+
+
+            <!-- RODAPÉ -->
+
+            <footer class="main-footer">
+
+                <p>
+                    SEGMAX PROTEC © 2026
+                    | Sistema de Gestão 2.0
+                </p>
+
+                <a href="https://wa.me/5531984205162"
+                   target="_blank"
+                   rel="noopener noreferrer">
+
+                    WhatsApp: (31) 98420-5162
+
+                </a>
+
+            </footer>
+
+        </main>
+
+    </div>
+
+</body>
+</html>
