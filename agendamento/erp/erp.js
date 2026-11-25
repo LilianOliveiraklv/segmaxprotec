@@ -464,14 +464,561 @@
 
     }
 
-    registerModule("dashboard", async () => {
+// ==========================================
+// SEGMAX PROTEC - DASHBOARD PRINCIPAL
+// ==========================================
+
+registerModule("dashboard", async () => {
+
+    clearDashboard();
+
+    const version = sessionVersion;
+
+    const date = today();
+
+    const admin = currentRole === "admin";
+
+    const start = `${date}T00:00:00-03:00`;
+
+    const tomorrow = new Date(
+        `${date}T12:00:00Z`
+    );
+
+    tomorrow.setUTCDate(
+        tomorrow.getUTCDate() + 1
+    );
+
+    const end =
+        tomorrow.toISOString().slice(0, 10)
+        + "T00:00:00-03:00";
+
+    const anchor = $("#dashboardAppointments");
+
+    anchor.textContent =
+        "Carregando indicadores...";
+
+    function validDashboard() {
+
+        return version === sessionVersion
+            && currentModule === "dashboard"
+            && currentUser !== null;
+
+    }
+
+    // ======================================
+    // CONSULTAR AGENDA
+    // ======================================
+
+    let agendaQuery = db
+
+        .from("appointments")
+
+        .select(
+            "id,client_name,service,starts_at,status,technician_id",
+            { count: "exact" }
+        )
+
+        .gte("starts_at", start)
+
+        .lt("starts_at", end)
+
+        .in("status", [
+            "Agendado",
+            "Em andamento",
+            "Concluído"
+        ])
+
+        .order("starts_at")
+
+        .limit(50);
+
+    // ======================================
+    // CONSULTAR CLIENTES
+    // ======================================
+
+    const customersQuery = db
+
+        .from("customers")
+
+        .select("id", {
+            count: "exact",
+            head: true
+        })
+
+        .eq("active", true);
+
+    // ======================================
+    // CONSULTAR SERVICOS
+    // ======================================
+
+    const servicesQuery = db
+
+        .from("service_orders")
+
+        .select("id", {
+            count: "exact",
+            head: true
+        })
+
+        .eq("service_date", date)
+
+        .eq("status", "Concluído");
+
+    // ======================================
+    // CONSULTAR FINANCEIRO
+    // ======================================
+
+    const financeQuery = db.rpc(
+
+        "get_daily_financial_summary",
+
+        {
+            p_date: date
+        }
+
+    );
+
+    // ======================================
+    // CONSULTAR VALORES A RECEBER
+    // ======================================
+
+    async function getPendingTotal() {
+
+        let total = 0;
+
+        let offset = 0;
+
+        const pageSize = 500;
+
+        while (validDashboard()) {
+
+            const { data, error } = await db
+
+                .from("service_financial_summary")
+
+                .select(
+                    "service_order_id,balance_due"
+                )
+
+                .gt("balance_due", 0)
+
+                .order("service_order_id")
+
+                .range(
+                    offset,
+                    offset + pageSize - 1
+                );
+
+            if (error) {
+
+                return {
+                    error,
+                    total: null
+                };
+
+            }
+
+            const rows = data || [];
+
+            for (const row of rows) {
+
+                const value =
+                    Number(row.balance_due);
+
+                if (!Number.isFinite(value)) {
+
+                    return {
+                        error: true,
+                        total: null
+                    };
+
+                }
+
+                total += value;
+
+            }
+
+            if (rows.length < pageSize) {
+
+                return {
+                    error: null,
+                    total
+                };
+
+            }
+
+            offset += pageSize;
+
+        }
+
+        return {
+            error: true,
+            total: null
+        };
+
+    }
+
+    // ======================================
+    // CARREGAR INDICADORES
+    // ======================================
+
+    try {
+
+        const [
+
+            agenda,
+            customers,
+            services,
+            finance,
+            pending,
+            technicians
+
+        ] = await Promise.all([
+
+            agendaQuery,
+
+            customersQuery,
+
+            servicesQuery,
+
+            financeQuery,
+
+            getPendingTotal(),
+
+            db.from("technicians")
+
+                .select("user_id,full_name")
+
+        ]);
+
+        if (!validDashboard()) return;
+
+        function setCount(id, result) {
+
+            document.getElementById(id)
+                .textContent =
+
+                result.error ||
+                result.count === null
+
+                    ? "Indisponível"
+
+                    : String(result.count);
+
+        }
+
+        function setMoney(id, value) {
+
+            const number = Number(value);
+
+            document.getElementById(id)
+                .textContent =
+
+                value === null ||
+                value === undefined ||
+                !Number.isFinite(number)
+
+                    ? "Indisponível"
+
+                    : money(number);
+
+        }
+
+        setCount(
+            "statAppointments",
+            agenda
+        );
+
+        setCount(
+            "statCustomers",
+            customers
+        );
+
+        setCount(
+            "statServices",
+            services
+        );
+
+        setMoney(
+
+            "statReceived",
+
+            finance.error
+
+                ? null
+
+                : finance.data?.total_received
+
+        );
+
+        setMoney(
+
+            "statBalance",
+
+            finance.error
+
+                ? null
+
+                : finance.data?.company_balance
+
+        );
+
+        setMoney(
+
+            "statPending",
+
+            pending.error
+
+                ? null
+
+                : pending.total
+
+        );
+
+        // ==================================
+        // IDENTIFICAR TECNICOS
+        // ==================================
+
+        const names = new Map(
+
+            (technicians.data || []).map(
+
+                technician => [
+
+                    technician.user_id,
+
+                    technician.full_name
+
+                ]
+
+            )
+
+        );
+
+        // ==================================
+        // EXIBIR AGENDA DO DIA
+        // ==================================
+
+        anchor.replaceChildren();
+
+        const information =
+            document.createElement("p");
+
+        information.textContent = admin
+
+            ? "Visão administrativa da empresa."
+
+            : "Indicadores conforme as permissões do sócio.";
+
+        anchor.append(information);
+
+        if (agenda.error) {
+
+            const errorMessage =
+                document.createElement("p");
+
+            errorMessage.textContent =
+                "Não foi possível consultar a agenda.";
+
+            anchor.append(errorMessage);
+
+        } else if (!agenda.data?.length) {
+
+            const empty =
+                document.createElement("p");
+
+            empty.textContent =
+                "Nenhum atendimento confirmado para hoje.";
+
+            anchor.append(empty);
+
+        } else {
+
+            agenda.data.forEach(item => {
+
+                const card =
+                    document.createElement("div");
+
+                card.className = "content-card";
+
+                const time =
+                    new Intl.DateTimeFormat(
+
+                        "pt-BR",
+
+                        {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                            timeZone:
+                                "America/Sao_Paulo"
+                        }
+
+                    ).format(
+                        new Date(item.starts_at)
+                    );
+
+                card.innerHTML = `
+
+                    <h4>
+
+                        ${escapeHTML(time)}
+                        —
+                        ${escapeHTML(item.client_name)}
+
+                    </h4>
+
+                    <p>
+
+                        <strong>Serviço:</strong>
+
+                        ${escapeHTML(item.service)}
+
+                    </p>
+
+                    <p>
+
+                        <strong>Técnico:</strong>
+
+                        ${escapeHTML(
+
+                            names.get(item.technician_id)
+
+                            || "Não definido"
+
+                        )}
+
+                    </p>
+
+                    <p>
+
+                        <strong>Situação:</strong>
+
+                        ${escapeHTML(item.status)}
+
+                    </p>
+
+                `;
+
+                anchor.append(card);
+
+            });
+
+        }
+
+        // ==================================
+        // ATALHOS DO DASHBOARD
+        // ==================================
+
+        const actions =
+            document.createElement("div");
+
+        actions.className = "actions";
+
+        const shortcuts = [
+
+            ["Abrir agenda", "agenda"],
+
+            ["Cadastrar cliente", "clientes"],
+
+            ["Ordens de serviço", "servicos"],
+
+            ["Registrar pagamento", "pagamentos"],
+
+            ["Contas a receber", "receber"],
+
+            ["Fechamento de caixa", "caixa"]
+
+        ];
+
+        if (admin) {
+
+            shortcuts.push([
+
+                "Relatórios administrativos",
+
+                "relatorios"
+
+            ]);
+
+        }
+
+        shortcuts.forEach(([label, module]) => {
+
+            const button =
+                document.createElement("button");
+
+            button.type = "button";
+
+            button.className = "btn-secondary";
+
+            button.textContent = label;
+
+            button.onclick = () => {
+
+                if (validDashboard()) {
+
+                    void openModule(module);
+
+                }
+
+            };
+
+            actions.append(button);
+
+        });
+
+        anchor.append(actions);
+
+        // ==================================
+        // AVISAR SOBRE FALHAS PARCIAIS
+        // ==================================
+
+        if (
+
+            agenda.error ||
+
+            customers.error ||
+
+            services.error ||
+
+            finance.error ||
+
+            pending.error ||
+
+            technicians.error
+
+        ) {
+
+            notify(
+
+                "Alguns indicadores não puderam ser carregados.",
+
+                "warning"
+
+            );
+
+        }
+
+    } catch (error) {
+
+        if (!validDashboard()) return;
 
         clearDashboard();
 
-        $("#dashboardAppointments").textContent =
-            "Os indicadores serao integrados nas proximas etapas.";
+        anchor.textContent =
+            "Não foi possível carregar o painel.";
 
-    });
+        notify(
+
+            "Verifique a conexão e tente novamente.",
+
+            "error"
+
+        );
+
+    }
+
+});
 
     // ======================================
     // EXIBIR LOGIN
